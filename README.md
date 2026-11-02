@@ -38,7 +38,7 @@ La primera vez, Claude Code te pregunta si confías en la carpeta: dile que sí.
 
 1. Le pasas una captura de tu perfil de Instagram o TikTok: la parte de arriba, con la bio, los números y la grilla. Si quieres más precisión, suma una de la pestaña de reels, con las vistas.
 2. Lee tu perfil: qué promete tu bio y a quién le habla, de qué temas es tu grilla, si se entiende cada portada, si apareces tú y qué post se destacó.
-3. Te tira tres cartas de los 18 arcanos del algoritmo: lo que hiciste, lo que te frena y lo que tienes que hacer. Cada una trae la prueba que la llamó.
+3. Te tira tres cartas de los 19 arcanos del algoritmo: lo que hiciste, lo que te frena y lo que tienes que hacer. Cada una trae la prueba que la llamó.
 4. Te deja la profecía, tres pasos para esta semana, la lectura en `lecturas/` y la imagen de las cartas para historias.
 
 ### Día 3 · Juez de ideas tontas (`/juez`)
