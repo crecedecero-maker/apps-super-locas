@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Velorio de reels</title>
+<meta name="description" content="La autopsia de tu reel que no vio nadie: en qué segundo murió, de qué y cómo resucitarlo.">
+<meta name="theme-color" content="#2a0a5e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,500&display=swap">
+<style>
+/* Una sola columna para el celular. La lápida se dibuja en un canvas de
+   1080x1920 y es la misma imagen que se ve y la que se baja para historias.
+   El resultado sale de datos.js, que escribe /velorio; si no está, ejemplo.js. */
+:root {
+  --fondo-1: #2a0a5e;
+  --fondo-2: #6d28d9;
+  --tinta: #2e1065;
+  --tinta-suave: #5b4a8a;
+  --lila: #d8c8ff;
+  --panel: #f6f2ff;
+  --rosa: #ff2e88;
+  --rosa-oscuro: #c8125f;
+  --amarillo: #ffd23f;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--fondo-1), var(--fondo-2)) fixed;
+  color: #fff;
+  font: 500 16px/1.5 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+main {
+  max-width: 440px; margin: 0 auto;
+  padding: 36px max(18px, env(safe-area-inset-left)) 48px max(18px, env(safe-area-inset-right));
+  display: grid; gap: 22px;
+}
+[hidden] { display: none !important; }
+.serie { font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lila); margin: 0; }
+h1 { font: 900 clamp(2.6rem, 12vw, 3.4rem)/0.95 "Fraunces", Georgia, serif; margin: 0; letter-spacing: -0.02em; }
+.bajada { margin: 0; color: var(--lila); font-size: 1.08rem; }
+.aviso-ejemplo {
+  margin: 0; background: var(--amarillo); color: var(--tinta);
+  font-weight: 700; border-radius: 16px; padding: 12px 16px;
+}
+.aviso-ejemplo code { font: 800 1em "Bricolage Grotesque", system-ui, sans-serif; background: rgba(46, 16, 101, 0.12); padding: 1px 6px; border-radius: 6px; }
+.resultado, .panel {
+  background: var(--panel); color: var(--tinta);
+  border-radius: 22px; padding: 20px;
+  display: grid; gap: 14px;
+  box-shadow: 0 18px 40px rgba(20, 0, 60, 0.35);
+}
+.resultado img { width: 100%; height: auto; border-radius: 16px; display: block; background: var(--fondo-1); }
+button {
+  font: 800 1.05rem "Bricolage Grotesque", system-ui, sans-serif;
+  border: 0; border-radius: 999px; padding: 15px 22px; min-height: 52px; cursor: pointer;
+  background: var(--rosa); color: #fff;
+}
+button:active { transform: translateY(1px); }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--rosa); outline-offset: 3px; }
+.panel h2 { margin: 0; font: 800 0.8rem/1.2 "Bricolage Grotesque", system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rosa-oscuro); }
+.panel h3 { margin: 0 0 4px; font: 800 1rem/1.3 "Bricolage Grotesque", system-ui, sans-serif; }
+.panel p { margin: 0; }
+.meta { color: var(--tinta-suave); font-weight: 700; }
+.murio { font: 900 2rem/1.05 "Fraunces", Georgia, serif; }
+.causa { font-size: 1.08rem; font-weight: 600; }
+.lista { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; }
+.evidencia { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.evidencia li { display: grid; grid-template-columns: 70px 1fr; gap: 10px; align-items: baseline; }
+.evidencia .seg {
+  font-weight: 800; font-size: 0.9rem; color: var(--rosa-oscuro); background: #ffe1ef;
+  border-radius: 999px; text-align: center; padding: 2px 8px;
+}
+.epitafio { font: italic 500 1.25rem/1.35 "Fraunces", Georgia, serif; }
+.pasos { margin: 0; padding-left: 1.4em; display: grid; gap: 10px; font-weight: 600; }
+.pasos li::marker { font-weight: 800; color: var(--rosa); }
+.error { margin: 0; background: #fff; color: var(--rosa-oscuro); font-weight: 700; border-radius: 16px; padding: 14px 16px; }
+footer { text-align: center; color: var(--lila); font-size: 0.9rem; }
+footer a { color: #fff; font-weight: 800; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="serie">Apps súper locas · Día 1</p>
+    <h1>Velorio de reels</h1>
+    <p class="bajada">La autopsia de tu reel que no vio nadie.</p>
+  </header>
+
+  <p class="aviso-ejemplo" id="aviso-ejemplo" hidden></p>
+  <p class="error" id="error" role="alert" hidden></p>
+
+  <section class="resultado" id="resultado" hidden aria-live="polite">
+    <img id="lapida" alt="">
+    <button type="button" id="bajar">Bajar para historias</button>
+  </section>
+
+  <section class="panel" id="autopsia" hidden>
+    <h2>La autopsia</h2>
+    <p class="meta" id="meta"></p>
+    <p class="murio" id="murio"></p>
+    <div>
+      <h3>Causa de muerte</h3>
+      <p class="causa" id="causa"></p>
+    </div>
+    <div id="bloque-causas">
+      <h3>Causas concurrentes</h3>
+      <ul class="lista" id="causas"></ul>
+    </div>
+  </section>
+
+  <section class="panel" id="bloque-evidencia" hidden>
+    <h2>La evidencia</h2>
+    <ol class="evidencia" id="evidencia"></ol>
+  </section>
+
+  <section class="panel" id="bloque-epitafio" hidden>
+    <h2>Epitafio</h2>
+    <p class="epitafio" id="epitafio"></p>
+  </section>
+
+  <section class="panel" id="bloque-resucitar" hidden>
+    <h2>Cómo resucitarlo</h2>
+    <ol class="pasos" id="resucitar"></ol>
+  </section>
+
+  <footer>Hecha con Claude Code por alguien que no sabe programar · <a href="https://www.instagram.com/crece_de_cero/">@crece_de_cero</a></footer>
+</main>
+
+<script>
+(function () {
+  var COMANDO = "/velorio";
+
+  function texto(v) { return v === null || v === undefined ? "" : String(v).trim(); }
+  function lista(v) { return Array.isArray(v) ? v.map(texto).filter(Boolean) : []; }
+  function miles(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+  // 1.5 → «1,5»; los enteros, tal cual.
+  function numero(n) {
+    var x = Number(n);
+    if (n === null || n === undefined || n === "" || !isFinite(x)) return texto(n);
+    return Number.isInteger(x) ? String(x) : String(Math.round(x * 10) / 10).replace(".", ",");
+  }
+  function vistasTexto(v) {
+    if (v === null || v === undefined || v === "") return "";
+    var x = Number(v);
+    if (!isFinite(x)) return texto(v);
+    x = Math.round(x);
+    return miles(x) + (x === 1 ? " vista" : " vistas");
+  }
+  function fechaLinda(f) {
+    var t = texto(f), m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t);
+    return m ? (+m[3]) + "/" + (+m[2]) + "/" + m[1] : t;
+  }
+
+  // ---------- La lápida ----------
+  // Corta un texto en renglones que entran en el ancho, como mucho «max».
+  function renglones(ctx, contenido, ancho, max) {
+    // Un número nunca queda separado de su «%»: el espacio entre los dos no corta el renglón.
+    var palabras = contenido.replace(/(\d) %/g, "$1" + String.fromCharCode(160) + "%").split(/[ \t\n\r\f\v]+/), lineas = [], linea = "";
+    for (var i = 0; i < palabras.length; i++) {
+      var prueba = linea ? linea + " " + palabras[i] : palabras[i];
+      if (ctx.measureText(prueba).width > ancho && linea) { lineas.push(linea); linea = palabras[i]; }
+      else linea = prueba;
+    }
+    if (linea) lineas.push(linea);
+    if (lineas.length > max) {
+      lineas = lineas.slice(0, max);
+      // El «…» va después de una palabra entera, no en el medio de una.
+      var ultima = lineas[max - 1];
+      while (ctx.measureText(ultima + "…").width > ancho && /\s/.test(ultima)) ultima = ultima.replace(/\s+\S+$/, "");
+      while (ctx.measureText(ultima + "…").width > ancho && ultima.length) ultima = ultima.slice(0, -1);
+      lineas[max - 1] = ultima.replace(/[\s,;:]+$/, "") + "…";
+    }
+    return lineas;
+  }
+
+  // Como renglones, pero si no entra corta al final de una frase o de una parte
+  // de la frase («…de qué trata…»), no en el medio de una idea.
+  function renglonesFrase(ctx, contenido, ancho, max) {
+    var todo = renglones(ctx, contenido, ancho, 999);
+    if (todo.length <= max) return { lineas: todo, cortada: false };
+    var cortes = [], re = /[.:;,—–]\s/g, m;
+    while ((m = re.exec(contenido))) cortes.push(m.index + 1);
+    for (var i = cortes.length - 1; i >= 0; i--) {
+      var pedazo = contenido.slice(0, cortes[i]).replace(/[\s,:;—–]+$/, "");
+      if (pedazo.length < 24) break;
+      var final = /[.!?…]$/.test(pedazo) ? pedazo : pedazo + "…";
+      var l = renglones(ctx, final, ancho, 999);
+      if (l.length <= max) return { lineas: l, cortada: true };
+    }
+    return { lineas: renglones(ctx, contenido, ancho, max), cortada: true };
+  }
+
+  function vela(ctx, x, base) {
+    ctx.fillStyle = "#fff4e0";
+    ctx.beginPath(); ctx.roundRect(x - 22, base - 170, 44, 170, 10); ctx.fill();
+    ctx.fillStyle = "#ff8a00";
+    ctx.beginPath(); ctx.ellipse(x, base - 205, 17, 30, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#ffd23f";
+    ctx.beginPath(); ctx.ellipse(x, base - 198, 8, 16, 0, 0, Math.PI * 2); ctx.fill();
+  }
+
+  function flor(ctx, x, y, r, color) {
+    ctx.fillStyle = color;
+    for (var i = 0; i < 6; i++) {
+      var a = (i / 6) * Math.PI * 2;
+      ctx.beginPath(); ctx.arc(x + Math.cos(a) * r, y + Math.sin(a) * r, r * 0.75, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = "#ffd23f";
+    ctx.beginPath(); ctx.arc(x, y, r * 0.6, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Lo grabado en la lápida, de lo más holgado a lo más apretado, hasta que entre
+  // entre el arco y las flores. La causa es lo que más importa: antes de cortarla
+  // se achica la letra y se sacan las causas concurrentes (en la página están todas).
+  var TAMANOS = [
+    { qepd: 118, titulo: 66, causa: 40, causaMax: 4, conc: 34, concMax: 2, concLineas: 2, epit: 36, epitMax: 3 },
+    { qepd: 106, titulo: 60, causa: 38, causaMax: 4, conc: 32, concMax: 2, concLineas: 2, epit: 34, epitMax: 3 },
+    { qepd: 96, titulo: 54, causa: 36, causaMax: 5, conc: 30, concMax: 2, concLineas: 2, epit: 32, epitMax: 3 },
+    { qepd: 96, titulo: 54, causa: 36, causaMax: 5, conc: 30, concMax: 1, concLineas: 2, epit: 32, epitMax: 3 },
+    { qepd: 90, titulo: 50, causa: 34, causaMax: 5, conc: 28, concMax: 1, concLineas: 2, epit: 30, epitMax: 3 },
+    { qepd: 86, titulo: 48, causa: 32, causaMax: 5, conc: 28, concMax: 1, concLineas: 2, epit: 30, epitMax: 2 },
+    { qepd: 86, titulo: 48, causa: 32, causaMax: 5, conc: 28, concMax: 0, concLineas: 2, epit: 30, epitMax: 3 },
+    { qepd: 84, titulo: 46, causa: 30, causaMax: 5, conc: 26, concMax: 0, concLineas: 2, epit: 28, epitMax: 2 }
+  ];
+
+  function dibujar(d) {
+    var c = document.createElement("canvas");
+    c.width = 1080; c.height = 1920;
+    var ctx = c.getContext("2d");
+
+    var fondo = ctx.createLinearGradient(0, 0, 0, 1920);
+    fondo.addColorStop(0, "#2a0a5e"); fondo.addColorStop(1, "#7c3aed");
+    ctx.fillStyle = fondo; ctx.fillRect(0, 0, 1080, 1920);
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#d8c8ff";
+    ctx.font = '800 40px "Bricolage Grotesque"';
+    ctx.fillText("VELORIO DE REELS", 540, 140);
+    var sub = [texto(d.plataforma), fechaLinda(d.fecha)].filter(Boolean).join(" · ");
+    if (sub) { ctx.font = '600 30px "Bricolage Grotesque"'; ctx.fillText(sub, 540, 190); }
+
+    // La lápida: arco arriba y base recta, con su sombra en el piso.
+    ctx.fillStyle = "#1c0942";
+    ctx.beginPath(); ctx.ellipse(540, 1470, 470, 46, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#c9bfe3";
+    ctx.beginPath(); ctx.moveTo(130, 1460); ctx.lineTo(130, 650); ctx.arc(540, 650, 410, Math.PI, 0); ctx.lineTo(950, 1460); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#efeaf8";
+    ctx.beginPath(); ctx.moveTo(152, 1446); ctx.lineTo(152, 650); ctx.arc(540, 650, 388, Math.PI, 0); ctx.lineTo(928, 1446); ctx.closePath(); ctx.fill();
+
+    function bloque(fuente, contenido, ancho, max, alto, color, antes) {
+      ctx.font = fuente;
+      return { fuente: fuente, lineas: renglones(ctx, contenido, ancho, max), alto: alto, color: color, antes: antes };
+    }
+    // Un texto largo, cortado por frases; con comillas, las de cierre no se pierden.
+    function bloqueFrase(fuente, contenido, ancho, max, alto, color, antes, comillas) {
+      ctx.font = fuente;
+      var r = renglonesFrase(ctx, contenido, comillas ? ancho - 40 : ancho, max);
+      if (comillas && r.lineas.length) { r.lineas[0] = "«" + r.lineas[0]; r.lineas[r.lineas.length - 1] += "»"; }
+      return { fuente: fuente, lineas: r.lineas, alto: alto, color: color, antes: antes, cortada: r.cortada };
+    }
+    // La letra más grande (hasta «tam») con la que el texto entra en un renglón.
+    function ajustada(peso, tam, contenido, ancho) {
+      ctx.font = peso + " " + tam + 'px "Bricolage Grotesque"';
+      while (tam > 26 && ctx.measureText(contenido).width > ancho) { tam -= 2; ctx.font = peso + " " + tam + 'px "Bricolage Grotesque"'; }
+      return peso + " " + tam + 'px "Bricolage Grotesque"';
+    }
+    var murio = d.segundo ? "Murió en el segundo " + d.segundo + (d.estimado ? " (estimado)" : "") : "";
+    function armar(t) {
+      var partes = [bloque('900 ' + t.qepd + 'px "Fraunces"', "Q.E.P.D.", 700, 1, Math.round(t.qepd * 1.18), "#c8125f", 0)];
+      partes.push(bloqueFrase('700 ' + t.titulo + 'px "Fraunces"', d.reel, 640, 2, Math.round(t.titulo * 1.18), "#2e1065", 26, true));
+      if (d.vistas) partes.push(bloque('800 ' + t.titulo + 'px "Bricolage Grotesque"', d.vistas, 700, 1, Math.round(t.titulo * 1.2), "#2e1065", 20));
+      if (murio) partes.push(bloque(ajustada("600", 42, murio, 660), murio, 700, 1, 56, "#5b4a8a", 0));
+      partes.push({ raya: true, alto: 5, antes: 30 });
+      partes.push(bloque('800 32px "Bricolage Grotesque"', "CAUSA DE MUERTE", 700, 1, 44, "#c8125f", 34));
+      var causa = bloqueFrase('600 ' + t.causa + 'px "Bricolage Grotesque"', d.causa, 660, t.causaMax, Math.round(t.causa * 1.3), "#2e1065", 6);
+      partes.push(causa);
+      var conc = d.causas.slice(0, t.concMax);
+      if (conc.length) {
+        partes.push(bloque('800 26px "Bricolage Grotesque"', "CAUSAS CONCURRENTES", 700, 1, 36, "#c8125f", 26));
+        conc.forEach(function (x) {
+          partes.push(bloqueFrase('600 ' + t.conc + 'px "Bricolage Grotesque"', x, 640, t.concLineas, Math.round(t.conc * 1.28), "#5b4a8a", 6));
+        });
+      }
+      if (d.epitafio) partes.push(bloqueFrase('italic 500 ' + t.epit + 'px "Fraunces"', d.epitafio, 640, t.epitMax, Math.round(t.epit * 1.25), "#5b4a8a", 30, true));
+      return { partes: partes, causaCortada: causa.cortada };
+    }
+    function alto(partes) { return partes.reduce(function (s, p) { return s + p.antes + (p.raya ? p.alto : p.lineas.length * p.alto); }, 0); }
+    // Gana el primer tamaño en el que entra todo sin cortar la causa; si la causa
+    // no entra entera en ninguno, el primero en el que entra todo.
+    var partes, LUGAR = 1060, entra = null;
+    for (var k = 0; k < TAMANOS.length; k++) {
+      var a = armar(TAMANOS[k]);
+      if (alto(a.partes) > LUGAR) continue;
+      if (!a.causaCortada) { partes = a.partes; break; }
+      if (!entra) entra = a.partes;
+    }
+    partes = partes || entra || armar(TAMANOS[TAMANOS.length - 1]).partes;
+    var y = 350 + Math.max(0, (LUGAR - alto(partes)) / 2);
+    partes.forEach(function (p) {
+      y += p.antes;
+      if (p.raya) { ctx.fillStyle = "#cbb8ff"; ctx.fillRect(330, y, 420, p.alto); y += p.alto; return; }
+      ctx.font = p.fuente; ctx.fillStyle = p.color;
+      p.lineas.forEach(function (l) { ctx.fillText(l, 540, y + p.alto * 0.78); y += p.alto; });
+    });
+
+    vela(ctx, 92, 1470); vela(ctx, 988, 1470);
+    flor(ctx, 230, 1452, 30, "#ff2e88"); flor(ctx, 310, 1474, 24, "#ff8fc4");
+    flor(ctx, 850, 1452, 30, "#ff2e88"); flor(ctx, 770, 1474, 24, "#ff8fc4");
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = 'italic 500 50px "Fraunces"';
+    ctx.fillText("El algoritmo lamenta su pérdida.", 540, 1640);
+
+    ctx.font = '800 54px "Bricolage Grotesque"';
+    ctx.fillText("@crece_de_cero", 540, 1790);
+    ctx.fillStyle = "#d8c8ff";
+    ctx.font = '600 32px "Bricolage Grotesque"';
+    ctx.fillText("Apps súper locas · Día 1", 540, 1846);
+    return c;
+  }
+
+  function fuentesListas() {
+    if (!document.fonts || !document.fonts.load) return Promise.resolve();
+    return Promise.all([
+      document.fonts.load('900 118px "Fraunces"'),
+      document.fonts.load('700 66px "Fraunces"'),
+      document.fonts.load('italic 500 36px "Fraunces"'),
+      document.fonts.load('800 66px "Bricolage Grotesque"'),
+      document.fonts.load('600 42px "Bricolage Grotesque"')
+    ]).catch(function () {});
+  }
+
+  // ---------- La página ----------
+  var actual = null;
+
+  function llenarLista(el, items) {
+    el.textContent = "";
+    items.forEach(function (t) { var li = document.createElement("li"); li.textContent = t; el.appendChild(li); });
+  }
+
+  function mostrar(v) {
+    var d = {
+      fecha: texto(v.fecha), plataforma: texto(v.plataforma), reel: texto(v.reel) || "Sin título",
+      vistas: vistasTexto(v.vistas), duracion: v.duracion, segundo: numero(v.segundo),
+      estimado: v.estimado === true || v.estimado === "true",
+      causa: texto(v.causa), causas: lista(v.causas), epitafio: texto(v.epitafio), resucitar: lista(v.resucitar),
+      evidencia: (Array.isArray(v.evidencia) ? v.evidencia : []).filter(function (e) { return e && texto(e.que); })
+    };
+    actual = d;
+
+    var meta = [d.plataforma, fechaLinda(d.fecha), d.vistas || "sin estadísticas de vistas"];
+    var dura = numero(d.duracion);
+    if (dura) meta.push("duraba " + dura + " s");
+    document.getElementById("meta").textContent = "«" + d.reel + "» · " + meta.filter(Boolean).join(" · ");
+    var murio = d.segundo ? "Murió en el segundo " + d.segundo + (d.estimado ? " (estimado)" : "") : "";
+    document.getElementById("murio").textContent = murio ? murio + "." : "No se sabe en qué segundo murió.";
+    document.getElementById("causa").textContent = d.causa || "Sin causa registrada.";
+    llenarLista(document.getElementById("causas"), d.causas);
+    document.getElementById("bloque-causas").hidden = !d.causas.length;
+
+    var ol = document.getElementById("evidencia");
+    ol.textContent = "";
+    d.evidencia.forEach(function (e) {
+      var li = document.createElement("li"), seg = document.createElement("span"), que = document.createElement("span");
+      seg.className = "seg";
+      seg.textContent = numero(e.segundo) !== "" ? numero(e.segundo) + " s" : "—";
+      que.textContent = texto(e.que);
+      li.appendChild(seg); li.appendChild(que); ol.appendChild(li);
+    });
+    document.getElementById("bloque-evidencia").hidden = !d.evidencia.length;
+
+    document.getElementById("epitafio").textContent = d.epitafio ? "«" + d.epitafio + "»" : "";
+    document.getElementById("bloque-epitafio").hidden = !d.epitafio;
+    llenarLista(document.getElementById("resucitar"), d.resucitar);
+    document.getElementById("bloque-resucitar").hidden = !d.resucitar.length;
+    document.getElementById("autopsia").hidden = false;
+
+    fuentesListas().then(function () {
+      var c = dibujar(d);
+      d.canvas = c;
+      var img = document.getElementById("lapida");
+      img.src = c.toDataURL("image/png");
+      img.alt = "Lápida de «" + d.reel + "»" + (d.vistas ? ", " + d.vistas : "") + (murio ? ", " + murio.charAt(0).toLowerCase() + murio.slice(1) : "") + ". Causa de muerte: " + d.causa;
+      document.getElementById("resultado").hidden = false;
+    });
+  }
+
+  document.getElementById("bajar").addEventListener("click", function () {
+    if (!actual || !actual.canvas) return;
+    var nombre = "velorio-" + actual.reel.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]+/g, "-").slice(0, 40).replace(/^-|-$/g, "") + ".png";
+    actual.canvas.toBlob(function (blob) {
+      var archivo = new File([blob], nombre, { type: "image/png" });
+      // En el celular, compartir abre la hoja para guardarla o subirla a historias.
+      if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+        navigator.share({ files: [archivo], title: "Velorio de reels" }).catch(function () {});
+        return;
+      }
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = nombre;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    }, "image/png");
+  });
+
+  // ---------- Los datos: datos.js, o el ejemplo si todavía no hay ----------
+  function cargar(src, listo) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.onload = function () { listo(true); };
+    s.onerror = function () { listo(false); };
+    document.head.appendChild(s);
+  }
+  function avisar(motivo) {
+    var p = document.getElementById("aviso-ejemplo"), code = document.createElement("code");
+    code.textContent = COMANDO;
+    p.textContent = motivo === "roto" ? "No pude leer datos.js. Esto es un ejemplo. Escribe " : "Esto es un ejemplo. Escribe ";
+    p.appendChild(code);
+    p.appendChild(document.createTextNode(" en Claude Code para ver el tuyo."));
+    p.hidden = false;
+  }
+  cargar("datos.js", function (hay) {
+    if (hay && window.VELORIO) { mostrar(window.VELORIO); return; }
+    var motivo = hay ? "roto" : "falta";
+    window.VELORIO = undefined;
+    cargar("ejemplo.js", function (ok) {
+      if (ok && window.VELORIO) { avisar(motivo); mostrar(window.VELORIO); return; }
+      var e = document.getElementById("error");
+      e.textContent = "No encontré el resultado. Escribe " + COMANDO + " en Claude Code y vuelve a abrir esta página.";
+      e.hidden = false;
+    });
+  });
+})();
+</script>
+</body>
+</html>

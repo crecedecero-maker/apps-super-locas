@@ -1,0 +1,120 @@
+{
+  "nombre": "Los arcanos del algoritmo",
+  "uso": "Cada carta tiene su significado al derecho (una fortaleza de la cuenta), invertida (un problema) y las señales del perfil que la llaman. El simbolo es el dibujo que pinta la página.",
+  "arcanos": [
+    {
+      "numero": "0", "nombre": "El Loco", "simbolo": "mochila",
+      "derecho": "Te animas a probar formatos nuevos, y eso trae ideas.",
+      "invertida": "Publicas sin plan: cada post es de un tema distinto y nadie sabe qué esperar de tu cuenta.",
+      "senales": ["la grilla salta de tema en tema", "ningún formato se repite"]
+    },
+    {
+      "numero": "I", "nombre": "El Mago", "simbolo": "varita",
+      "derecho": "Muestras herramientas y trucos que la gente puede usar hoy mismo.",
+      "invertida": "Hablas de herramientas pero no se ven funcionando.",
+      "senales": ["se ve la herramienta funcionando: capturas, pantallas o demos", "tutoriales con lo que salió"]
+    },
+    {
+      "numero": "II", "nombre": "La Sacerdotisa", "simbolo": "ojo",
+      "derecho": "Sabes de lo tuyo, y se nota en lo que enseñas.",
+      "invertida": "Sabes mucho, pero tu perfil no lo muestra: no se ve ninguna prueba de lo que haces.",
+      "senales": ["la bio no dice qué sabe hacer", "la grilla no muestra resultados ni casos"]
+    },
+    {
+      "numero": "III", "nombre": "La Emperatriz", "simbolo": "flor",
+      "derecho": "Tienes comunidad: te comentan mucho para el tamaño de tu cuenta.",
+      "invertida": "Te siguen, pero no te hablan: casi no hay comentarios.",
+      "senales": ["comentarios visibles frente a los seguidores", "historias destacadas con preguntas o respuestas"]
+    },
+    {
+      "numero": "IV", "nombre": "El Emperador", "simbolo": "corona",
+      "derecho": "Eres constante: publicas seguido y parejo.",
+      "invertida": "Publicas a los saltos: rachas llenas y semanas vacías.",
+      "senales": ["cantidad de publicaciones", "fechas o huecos visibles en la grilla"]
+    },
+    {
+      "numero": "VI", "nombre": "Los Enamorados", "simbolo": "corazones",
+      "derecho": "Tus dos temas se potencian: uno trae gente y el otro la retiene.",
+      "invertida": "Dos cuentas en una: dos temas que se pelean y confunden a quien llega.",
+      "senales": ["la bio es de un tema y la grilla de otro", "dos nichos mezclados"]
+    },
+    {
+      "numero": "VII", "nombre": "El Carro", "simbolo": "flecha",
+      "derecho": "Tienes una serie o un formato que empuja: repítelo.",
+      "invertida": "Cada video arranca de cero: no hay una serie ni un formato que la gente reconozca.",
+      "senales": ["portadas o títulos que se repiten (Día 1, Día 2…)", "un formato fijo"]
+    },
+    {
+      "numero": "IX", "nombre": "El Ermitaño", "simbolo": "farol",
+      "derecho": "Eliges bien qué publicar: cada post tiene trabajo.",
+      "invertida": "Desapareciste: publicas muy poco y el algoritmo se olvida de ti.",
+      "senales": ["pocas publicaciones", "un último post viejo"]
+    },
+    {
+      "numero": "X", "nombre": "La Rueda de la Fortuna", "simbolo": "rueda",
+      "derecho": "Estás en racha: tus últimos videos andan mejor que los de antes.",
+      "invertida": "Vistas en montaña rusa: un video anda, el siguiente no, y no se sabe por qué.",
+      "senales": ["las vistas vienen subiendo de un reel al siguiente", "vistas muy desparejas entre reels"]
+    },
+    {
+      "numero": "XII", "nombre": "El Colgado", "simbolo": "soga",
+      "derecho": "Portadas claras: se entiende de qué es cada video antes de abrirlo.",
+      "invertida": "Portadas mudas: sin texto, o todas iguales, nadie sabe de qué es cada video.",
+      "senales": ["miniaturas sin texto", "miniaturas que se parecen todas"]
+    },
+    {
+      "numero": "XIII", "nombre": "La Muerte", "simbolo": "calavera",
+      "derecho": "Supiste matar lo que no andaba y cambiar a tiempo.",
+      "invertida": "Algo tiene que morir: un formato que ya no da vistas y sigues usando.",
+      "senales": ["un formato que se repite con vistas bajas", "un cambio de estilo visible en la grilla"]
+    },
+    {
+      "numero": "XIV", "nombre": "La Templanza", "simbolo": "copas",
+      "derecho": "Llegas más allá de los tuyos: tus videos los ve gente que todavía no te sigue.",
+      "invertida": "Solo te ven los tuyos, y a veces ni eso: tus vistas no pasan la cantidad de seguidores.",
+      "senales": ["la mediana de vistas frente a la cantidad de seguidores"]
+    },
+    {
+      "numero": "XV", "nombre": "El Diablo", "simbolo": "cuernos",
+      "derecho": "Sabes usar lo que está de moda sin perder tu mirada.",
+      "invertida": "Haces lo mismo que todos: temas que podría subir cualquier cuenta, sin nada tuyo.",
+      "senales": ["titulares de noticias o temas que podría subir cualquier cuenta del rubro, sin nada propio", "temas genéricos como «3 tips» o «5 errores»"]
+    },
+    {
+      "numero": "XVI", "nombre": "La Torre", "simbolo": "torre",
+      "derecho": "Tu bio es un faro: dice qué haces y para quién.",
+      "invertida": "Tu bio no dice qué haces ni para quién: quien llega no sabe por qué seguirte.",
+      "senales": ["bio vaga", "bio vieja o de otro tema", "bio sin un para quién"]
+    },
+    {
+      "numero": "XVII", "nombre": "La Estrella", "simbolo": "estrella",
+      "derecho": "Tienes un post estrella: haz más de eso.",
+      "invertida": "Ningún post despega todavía: falta encontrar tu estrella.",
+      "senales": ["un post con más del triple de las vistas de la mediana", "todos los posts parejos y bajos"]
+    },
+    {
+      "numero": "XVIII", "nombre": "La Luna", "simbolo": "luna",
+      "derecho": "El misterio te sirve: tu personaje despierta curiosidad.",
+      "invertida": "Cuenta sin cara: nadie sabe quién está detrás, y cuesta confiar.",
+      "senales": ["no aparece ninguna persona en la foto ni en la grilla", "un personaje o avatar en lugar de una persona"]
+    },
+    {
+      "numero": "XIX", "nombre": "El Sol", "simbolo": "sol",
+      "derecho": "Se te ve: tu cara y tu historia están en tu cuenta.",
+      "invertida": "Escondes lo mejor que tienes: a ti.",
+      "senales": ["la persona aparece en las portadas o en los reels", "la historia personal está en la bio"]
+    },
+    {
+      "numero": "XX", "nombre": "El Juicio", "simbolo": "trompeta",
+      "derecho": "Pides bien: tu llamado a la acción es claro y tiene premio.",
+      "invertida": "No pides nada: ni link, ni «comenta», ni un motivo para seguirte.",
+      "senales": ["la bio no tiene link", "la bio no pide nada", "las portadas no invitan a comentar"]
+    },
+    {
+      "numero": "XXI", "nombre": "El Mundo", "simbolo": "mundo",
+      "derecho": "Todo encaja: la bio, la grilla y la constancia dicen lo mismo.",
+      "invertida": "Tienes las piezas, pero no encajan: cada parte de tu perfil dice otra cosa.",
+      "senales": ["coherencia entre la bio, la foto, las destacadas y la grilla"]
+    }
+  ]
+}

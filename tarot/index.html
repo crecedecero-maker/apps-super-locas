@@ -1,0 +1,1503 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El tarot del algoritmo</title>
+<meta name="description" content="Tres cartas sacadas de tu perfil: lo que hiciste, lo que te frena y lo que tienes que hacer esta semana.">
+<meta name="theme-color" content="#5a0b2e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=IM+Fell+English&display=swap">
+<style>
+/* La mesa de una tarotista: paño de terciopelo, velas, cartas antiguas ilustradas.
+   La tirada sale de datos.js, que escribe /tarot; si no está, de ejemplo.js. Cada
+   carta es un SVG: va igual en la página y en la imagen de 1080x1920 para historias.
+   Si existe cartas/<simbolo>.webp, la carta usa esa ilustración en vez del dibujo. */
+:root {
+  --carmesi: #a4161a;
+  --carmesi-vivo: #c1121f;
+  --violeta: #2b0a3f;
+  --dorado: #c9a227;
+  --crema: #f6ecd2;
+  --papel: #f3e6c8;
+  --tinta: #2a1d14;
+  --azul: #1f3fbf;
+  --reparto: 650ms;
+  --vuelta: 900ms;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  color: var(--crema);
+  background-color: #4a0a2c;
+  background-image:
+    var(--ruido, none),
+    radial-gradient(ellipse at 50% 36%, #b3122a 0%, #8c0f2b 26%, #5e0b38 52%, #2f0a42 78%, #1c0631 100%);
+  background-attachment: fixed;
+  font: 500 18px/1.5 "Cormorant Garamond", Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+[hidden] { display: none !important; }
+
+/* El ambiente: viñeta, luz de vela que titila y un hilo de humo de incienso. */
+.vineta { position: fixed; inset: 0; pointer-events: none; z-index: 0; background: radial-gradient(ellipse at 50% 42%, transparent 42%, rgba(12, 0, 22, 0.7) 100%); }
+.vela {
+  position: fixed; top: 6vh; width: 80vw; height: 75vh; pointer-events: none; z-index: 0;
+  background: radial-gradient(circle, rgba(255, 178, 84, 0.34), rgba(255, 128, 40, 0.12) 36%, transparent 66%);
+  mix-blend-mode: screen; animation: titila 2.9s ease-in-out infinite;
+}
+.vela.izq { left: -44vw; }
+.vela.der { right: -44vw; animation-duration: 3.6s; animation-delay: -1.4s; }
+@keyframes titila {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  13% { opacity: 0.66; }
+  27% { opacity: 1; transform: scale(1.05); }
+  42% { opacity: 0.74; }
+  58% { opacity: 0.96; transform: scale(0.98); }
+  71% { opacity: 0.7; }
+  86% { opacity: 0.92; transform: scale(1.02); }
+}
+.humo {
+  position: fixed; bottom: -12vh; left: 4vw; width: 34vw; height: 62vh; pointer-events: none; z-index: 0; opacity: 0;
+  background: radial-gradient(ellipse at 50% 70%, rgba(255, 240, 228, 0.22), transparent 66%);
+  filter: blur(16px); animation: humo 17s linear infinite;
+}
+.humo + .humo { left: 64vw; animation-duration: 21s; animation-delay: -8s; }
+@keyframes humo {
+  0% { transform: translate(0, 12vh) scale(0.8); opacity: 0; }
+  18% { opacity: 0.5; }
+  60% { transform: translate(5vw, -38vh) scale(1.25); opacity: 0.28; }
+  100% { transform: translate(-3vw, -82vh) scale(1.6); opacity: 0; }
+}
+
+main {
+  position: relative; z-index: 1;
+  overflow-x: clip;
+  max-width: 440px; margin: 0 auto;
+  padding: 22px max(16px, env(safe-area-inset-left)) 48px max(16px, env(safe-area-inset-right));
+  display: grid; gap: 22px;
+}
+header { text-align: center; display: grid; gap: 6px; }
+.cielo-lunas { display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: 6px; }
+.cielo-lunas svg.lunas { width: 100%; height: auto; display: block; }
+.velita { width: 30px; height: auto; display: block; }
+.velita .flama { transform-origin: 15px 30px; animation: flama 1.4s ease-in-out infinite alternate; }
+.velita + svg + .velita .flama { animation-duration: 1.8s; animation-delay: -0.6s; }
+@keyframes flama { 0% { transform: scale(1, 1) rotate(-3deg); } 50% { transform: scale(0.92, 1.12) rotate(2deg); } 100% { transform: scale(1.05, 0.94) rotate(-1deg); } }
+.serie { margin: 4px 0 0; font: 700 0.74rem/1.2 "Cinzel", Georgia, serif; letter-spacing: 0.22em; text-transform: uppercase; color: #e9c46a; }
+h1 {
+  margin: 0; font: 900 clamp(2rem, 9.6vw, 2.7rem)/1.02 "Cinzel Decorative", Georgia, serif;
+  color: var(--crema); text-shadow: 0 0 18px rgba(255, 190, 110, 0.35), 0 2px 0 #5e0b38;
+}
+.bajada { margin: 4px 0 0; font: italic 500 1.15rem/1.35 "Cormorant Garamond", Georgia, serif; color: #f0dfbf; }
+.adorno { color: #e9c46a; font: 700 0.9rem/1 "Cinzel", Georgia, serif; letter-spacing: 0.4em; }
+
+/* Papel de libro antiguo: crema, grano y bordes gastados, con filete carmesí y dorado. */
+.papel {
+  color: var(--tinta);
+  background-color: var(--papel);
+  background-image: var(--grano, none), radial-gradient(ellipse at 50% 42%, transparent 52%, rgba(126, 84, 34, 0.32) 100%);
+  border-radius: 6px;
+  box-shadow: 0 18px 38px rgba(10, 0, 20, 0.55), inset 0 0 0 5px var(--papel), inset 0 0 0 6.5px var(--carmesi), inset 0 0 0 9px var(--papel), inset 0 0 0 10px var(--dorado);
+}
+.aviso-ejemplo { margin: 0; padding: 16px 20px; font-weight: 600; font-size: 1.08rem; text-align: center; }
+.aviso-ejemplo code { font: 700 0.92em "Cinzel", Georgia, serif; color: var(--carmesi); }
+.aviso-ejemplo p { margin: 0; }
+.aviso-ejemplo ol { margin: 10px 0 0; padding: 0; list-style: none; counter-reset: aviso; display: grid; gap: 6px; text-align: left; }
+.aviso-ejemplo li { position: relative; padding-left: 30px; counter-increment: aviso; line-height: 1.35; }
+.aviso-ejemplo li::before { content: counter(aviso) "."; position: absolute; left: 0; width: 22px; text-align: right; font: 700 0.95rem/1.45 "Cinzel", Georgia, serif; color: var(--carmesi); }
+.otra-vez { display: grid; gap: 9px; justify-items: center; text-align: center; }
+.nota-otra-vez { margin: 0; max-width: 310px; font: italic 600 1rem/1.35 "Cormorant Garamond", Georgia, serif; color: #f0dfbf; }
+.nota-otra-vez b { font: 700 0.86em "Cinzel", Georgia, serif; font-style: normal; color: #f4d58d; }
+.error { margin: 0; padding: 16px 20px; font-weight: 700; color: var(--carmesi); }
+.consulta { margin: 0; text-align: center; }
+.consulta b { display: block; font: 700 1.05rem/1.3 "Cinzel", Georgia, serif; letter-spacing: 0.06em; color: #f4d58d; }
+.consulta span { font: italic 600 1.02rem/1.35 "Cormorant Garamond", Georgia, serif; color: #f0dfbf; }
+
+/* ---------- La tirada sobre el paño ---------- */
+.tirada { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; align-items: start; padding: 10px 0 4px; }
+.slot { position: relative; display: grid; gap: 7px; justify-items: center; --dx: 0px; }
+.slot.s1 { --r: -6deg; --ty: 7px; --r0: -2deg; z-index: 3; }
+.slot.s2 { --r: 0deg; --ty: -6px; --r0: 3deg; z-index: 2; }
+.slot.s3 { --r: 6deg; --ty: 7px; --r0: -4deg; z-index: 1; }
+.carta {
+  position: relative; width: 100%; aspect-ratio: 1 / 1.75; perspective: 900px;
+  transform: translate(var(--dx), var(--mazo-y, 44px)) rotate(var(--r0)) scale(0.72);
+  transition: transform var(--reparto) cubic-bezier(0.2, 0.78, 0.22, 1);
+}
+.slot.repartida .carta { transform: translate(0, var(--ty)) rotate(var(--r)) scale(1); }
+.tirada.sin-transicion .carta, .tirada.sin-transicion .mesa-mazo { transition: none !important; }
+.giro { position: absolute; inset: 0; transform-style: preserve-3d; }
+.cara {
+  position: absolute; inset: 0; border-radius: 6%/3.4%; overflow: hidden;
+  -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  box-shadow: 0 10px 18px rgba(8, 0, 16, 0.55);
+}
+.cara svg { display: block; width: 100%; height: 100%; }
+.frente { transform: rotateY(180deg); }
+.slot.invertida .frente { transform: rotateY(180deg) rotate(180deg); }
+.slot.dada .giro { animation: voltear var(--vuelta) cubic-bezier(0.32, 0.7, 0.24, 1) forwards; }
+.slot.quieta .giro { transform: rotateY(180deg); }
+@keyframes voltear {
+  0% { transform: rotateY(0deg) translateZ(0) scale(1); }
+  45% { transform: rotateY(96deg) translateZ(34px) scale(1.12); }
+  100% { transform: rotateY(180deg) translateZ(0) scale(1); }
+}
+/* El brillo: un destello dorado detrás y una luz que cruza la carta recién dada vuelta. */
+.carta::before {
+  content: ""; position: absolute; inset: -22%; border-radius: 50%; z-index: -1; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle, rgba(255, 214, 120, 0.75), rgba(255, 150, 60, 0.28) 42%, transparent 70%);
+}
+.slot.dada .carta::before { animation: destello 1.1s ease-out var(--vuelta) both; }
+@keyframes destello { 0% { opacity: 0; transform: scale(0.6); } 25% { opacity: 1; } 100% { opacity: 0; transform: scale(1.35); } }
+.frente::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; transform: translateX(-130%);
+  background: linear-gradient(105deg, transparent 32%, rgba(255, 250, 228, 0.8) 50%, transparent 68%);
+}
+.slot.dada .frente::after { animation: luz 0.9s ease-out calc(var(--vuelta) - 120ms) both; }
+@keyframes luz { to { transform: translateX(130%); } }
+.polvo { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+.polvo i {
+  position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; opacity: 0; background: var(--c, #f4d58d);
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+}
+.slot.dada .polvo i { animation: polvo 1s ease-out calc(var(--vuelta) - 100ms) both; }
+@keyframes polvo { 0% { opacity: 1; transform: translate(0, 0) scale(0.4); } 100% { opacity: 0; transform: translate(var(--px), var(--py)) scale(1.1) rotate(90deg); } }
+/* El mazo del que salen las cartas; se va cuando terminó de repartir. */
+.mesa-mazo {
+  position: absolute; left: 50%; top: 10px; width: calc((100% - 18px) / 3); aspect-ratio: 1 / 1.75; z-index: 0;
+  transform: translate(-50%, var(--mazo-y, 44px)) scale(0.72) rotate(-3deg);
+  transition: transform 0.5s ease, opacity 0.5s ease;
+}
+.mesa-mazo div { position: absolute; inset: 0; border-radius: 6%/3.4%; overflow: hidden; box-shadow: 0 6px 12px rgba(8, 0, 16, 0.5); }
+.mesa-mazo div:nth-child(1) { transform: translate(-3px, 4px); }
+.mesa-mazo div:nth-child(2) { transform: translate(-1.5px, 2px); }
+.mesa-mazo svg { display: block; width: 100%; height: 100%; }
+.tirada.repartido .mesa-mazo { opacity: 0; transform: translate(-50%, calc(var(--mazo-y, 44px) + 30px)) scale(0.66) rotate(-3deg); }
+.posicion { margin: 6px 0 0; font: 700 0.7rem/1 "Cinzel", Georgia, serif; letter-spacing: 0.16em; text-transform: uppercase; color: #f4d58d; opacity: 0; transition: opacity 0.4s ease; }
+.slot.repartida .posicion { opacity: 1; transition-delay: calc(var(--reparto) * 0.6); }
+.etiqueta-invertida {
+  margin: -1px 0 0; font: 700 0.6rem/1 "Cinzel", Georgia, serif; letter-spacing: 0.14em; color: var(--crema);
+  background: var(--carmesi-vivo); border: 1px solid var(--dorado); border-radius: 2px; padding: 4px 8px 3px;
+  opacity: 0; transition: opacity 0.4s ease;
+}
+/* Los rótulos van encima de la sombra de su carta: las cartas giradas de los costados
+   quedan más abajo y, como tienen transformación, se pintan sobre el texto sin posición. */
+.posicion, .etiqueta-invertida { position: relative; z-index: 1; }
+.slot.dada .etiqueta-invertida { opacity: 1; transition-delay: var(--vuelta); }
+.slot.quieta .etiqueta-invertida, .slot.quieta .posicion { opacity: 1; }
+
+button {
+  font: 700 0.95rem/1.2 "Cinzel", Georgia, serif; letter-spacing: 0.08em;
+  border-radius: 4px; padding: 15px 22px; min-height: 52px; cursor: pointer;
+  background: linear-gradient(180deg, #c1121f, #8e0e17); color: var(--crema);
+  border: 1.5px solid var(--dorado); box-shadow: 0 6px 16px rgba(10, 0, 20, 0.45), inset 0 0 0 3px rgba(201, 162, 39, 0.25);
+}
+button:active { transform: translateY(1px); }
+button:focus-visible, a:focus-visible { outline: 3px solid #f4d58d; outline-offset: 3px; }
+button.secundario { background: rgba(30, 6, 30, 0.35); justify-self: center; min-height: 46px; padding: 10px 20px; font-size: 0.86rem; }
+
+/* ---------- El libro: lecturas, profecía y pasos ---------- */
+.libro { padding: 30px 24px 26px; display: grid; gap: 4px; }
+.libro h2, .pasos-titulo { margin: 0 0 6px; text-align: center; font: 700 1.1rem/1.2 "Cinzel Decorative", Georgia, serif; color: var(--carmesi); }
+.libro .adorno { color: var(--dorado); text-align: center; margin: 0 0 4px; }
+.lecturas { list-style: none; margin: 0; padding: 0; display: grid; }
+.lectura { padding: 14px 0 16px; border-bottom: 1px solid rgba(120, 80, 40, 0.28); opacity: 0; transform: translateY(12px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.lectura:last-child { border-bottom: 0; }
+.lectura.visible { opacity: 1; transform: none; }
+.lectura .pos { margin: 0; font: 700 0.72rem/1.2 "Cinzel", Georgia, serif; letter-spacing: 0.16em; text-transform: uppercase; color: #7a5a2a; }
+.lectura h3 { margin: 2px 0 6px; font: 400 1.5rem/1.15 "IM Fell English", Georgia, serif; color: var(--carmesi); }
+.lectura h3 small { display: inline-block; vertical-align: middle; margin-left: 6px; font: 700 0.55rem/1 "Cinzel", Georgia, serif; letter-spacing: 0.14em; color: var(--crema); background: var(--carmesi-vivo); border: 1px solid var(--dorado); padding: 4px 6px 3px; border-radius: 2px; }
+.lectura .voz { margin: 0; font: italic 600 1.24rem/1.38 "Cormorant Garamond", Georgia, serif; }
+.lectura .voz::first-letter { float: left; font: 900 2.6em/0.82 "Cinzel Decorative", Georgia, serif; color: var(--carmesi); margin: 0.06em 0.08em 0 0; }
+.lectura .significa {
+  margin: 0 0 12px; padding: 7px 10px 8px; font-size: 1.04rem; line-height: 1.38; color: #3a2a1c;
+  background: rgba(201, 162, 39, 0.13); border-left: 3px solid var(--dorado); border-radius: 0 3px 3px 0;
+}
+.lectura .significa b { font: 700 0.72rem/1 "Cinzel", Georgia, serif; letter-spacing: 0.12em; text-transform: uppercase; color: var(--carmesi); }
+.lectura .significa i { font-weight: 700; }
+.lectura .prueba { margin: 8px 0 0; font-size: 1.02rem; color: #4a3626; }
+.lectura .prueba b { font: 700 0.72rem/1 "Cinzel", Georgia, serif; letter-spacing: 0.12em; text-transform: uppercase; color: var(--carmesi); margin-right: 4px; }
+.pergamino-caja { padding: 0 14px; opacity: 0; transform: translateY(12px); transition: opacity 0.8s ease, transform 0.8s ease; }
+.pergamino-caja.visible { opacity: 1; transform: none; }
+.pergamino { position: relative; padding: 24px 22px 22px; text-align: center; border-radius: 3px; }
+.pergamino::before, .pergamino::after {
+  content: ""; position: absolute; top: -9px; bottom: -9px; width: 18px; border-radius: 9px;
+  background: linear-gradient(90deg, #6e4521, #c9a26a 30%, #f6ead0 52%, #b98a4f 78%, #5e3a1c);
+  box-shadow: 0 6px 12px rgba(8, 0, 16, 0.45);
+}
+.pergamino::before { left: -13px; }
+.pergamino::after { right: -13px; }
+.pergamino h2 { margin: 0 0 8px; font: 700 0.95rem/1.2 "Cinzel Decorative", Georgia, serif; color: var(--carmesi); letter-spacing: 0.04em; }
+.pergamino p { margin: 0; font: italic 700 1.42rem/1.3 "Cormorant Garamond", Georgia, serif; color: var(--tinta); }
+.pasos-libro { padding: 28px 24px 24px; }
+.pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: paso; }
+.pasos li { position: relative; padding-left: 38px; counter-increment: paso; font-weight: 600; font-size: 1.1rem; line-height: 1.38; }
+.pasos li::before { content: counter(paso, upper-roman) "."; position: absolute; left: 0; top: 0; width: 32px; text-align: right; font: 700 1.05rem/1.4 "Cinzel", Georgia, serif; color: var(--carmesi); }
+.marco-imagen { padding: 22px 18px 20px; display: grid; gap: 14px; }
+.marco-imagen h2 { margin: 0; text-align: center; font: 700 1rem/1.2 "Cinzel Decorative", Georgia, serif; color: var(--carmesi); }
+.marco-imagen img { width: 100%; height: auto; display: block; border-radius: 4px; background: #5e0b38; box-shadow: 0 6px 14px rgba(10, 0, 20, 0.35); }
+.mazo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 10px; }
+.mazo figure { margin: 0; display: grid; gap: 6px; justify-items: center; }
+.mazo .cara { position: relative; width: 100%; aspect-ratio: 1 / 1.75; transform: none; }
+.mazo figcaption { font: 700 0.62rem/1.2 "Cinzel", Georgia, serif; letter-spacing: 0.1em; text-transform: uppercase; color: #7a5a2a; text-align: center; }
+footer { text-align: center; color: #f0dfbf; font-size: 1rem; }
+footer a { color: #f4d58d; font-weight: 700; }
+
+@media (prefers-reduced-motion: reduce) {
+  .vela, .humo, .velita .flama { animation: none; }
+  .humo { display: none; }
+  .lectura, .pergamino-caja, .carta, .mesa-mazo { transition: none; }
+}
+</style>
+</head>
+<body>
+<div class="vineta" aria-hidden="true"></div>
+<div class="vela izq" aria-hidden="true"></div>
+<div class="vela der" aria-hidden="true"></div>
+<div class="humo" aria-hidden="true"></div>
+<div class="humo" aria-hidden="true"></div>
+<main>
+  <header>
+    <div class="cielo-lunas" id="cielo-lunas" aria-hidden="true"></div>
+    <p class="serie">Apps súper locas · Día 2</p>
+    <h1>El Tarot del Algoritmo</h1>
+    <p class="adorno" aria-hidden="true">✦ ☾ ✦</p>
+    <p class="bajada">Tres cartas sacadas de tu perfil: lo que hiciste, lo que te frena y lo que tienes que hacer.</p>
+  </header>
+
+  <div class="aviso-ejemplo papel" id="aviso-ejemplo" hidden></div>
+  <p class="error papel" id="error" role="alert" hidden></p>
+
+  <p class="consulta" id="consulta" hidden></p>
+  <div class="tirada" id="tirada" hidden></div>
+  <div class="otra-vez" id="bloque-otra-vez" hidden>
+    <button type="button" class="secundario" id="otra-vez">Ver otra vez cómo salen</button>
+    <p class="nota-otra-vez">Tus cartas salen de tu perfil. Para una lectura nueva, pásale otra captura a <b>/tarot</b> en Claude Code.</p>
+  </div>
+
+  <section class="libro papel" id="bloque-lecturas" hidden>
+    <h2>Lo que dicen las cartas</h2>
+    <p class="adorno" aria-hidden="true">❦</p>
+    <ol class="lecturas" id="lecturas"></ol>
+  </section>
+
+  <div class="pergamino-caja" id="bloque-profecia" hidden>
+    <section class="pergamino papel">
+      <h2>La profecía</h2>
+      <p id="profecia"></p>
+    </section>
+  </div>
+
+  <section class="pasos-libro papel" id="bloque-pasos" hidden>
+    <h2 class="pasos-titulo">Lo que las cartas piden esta semana</h2>
+    <ol class="pasos" id="pasos"></ol>
+  </section>
+
+  <section class="marco-imagen papel" id="bloque-imagen" hidden>
+    <h2>La tirada, para tus historias</h2>
+    <img id="imagen" alt="">
+    <button type="button" id="bajar">Bajar para historias</button>
+  </section>
+
+  <section class="marco-imagen papel" id="bloque-mazo" hidden>
+    <h2 id="titulo-mazo">El mazo</h2>
+    <div class="mazo" id="mazo"></div>
+    <img id="hoja" alt="Todas las cartas del mazo">
+    <button type="button" id="bajar-hoja">Bajar la hoja</button>
+  </section>
+
+  <footer>Hecha con Claude Code por alguien que no sabe programar · <a href="https://www.instagram.com/crece_de_cero/">@crece_de_cero</a></footer>
+</main>
+
+<script>
+(function () {
+  var COMANDO = "/tarot";
+  // Los tiempos de la tirada, en milisegundos: la espera antes de repartir, lo que
+  // tarda cada carta en llegar del mazo, el tiempo entre una carta y la otra, la
+  // pausa antes de dar vuelta la primera, lo que tarda cada una en darse vuelta y la
+  // pausa entre una vuelta y la siguiente.
+  var ESPERA = 500, REPARTO = 650, ENTRE_REPARTOS = 330, ANTES_DE_GIRAR = 450, VUELTA = 900, PAUSA = 450;
+  var POSICIONES = {
+    pasado: { titulo: "Pasado", sub: "lo que hiciste", romano: "I" },
+    presente: { titulo: "Presente", sub: "lo que te frena", romano: "II" },
+    futuro: { titulo: "Futuro", sub: "lo que tienes que hacer", romano: "III" }
+  };
+  // El mazo, copiado de .claude/skills/tarot/arcanos.json, con lo que significa cada
+  // carta al derecho y al revés. Si cambia el mazo de la skill, hay que cambiarlo acá.
+  var MAZO = [
+    { numero: "0", nombre: "El Loco", simbolo: "mochila", derecho: "Te animas a probar formatos nuevos, y eso trae ideas.", invertida: "Publicas sin plan: cada post es de un tema distinto y nadie sabe qué esperar de tu cuenta." },
+    { numero: "I", nombre: "El Mago", simbolo: "varita", derecho: "Muestras herramientas y trucos que la gente puede usar hoy mismo.", invertida: "Hablas de herramientas pero no se ven funcionando." },
+    { numero: "II", nombre: "La Sacerdotisa", simbolo: "ojo", derecho: "Sabes de lo tuyo, y se nota en lo que enseñas.", invertida: "Sabes mucho, pero tu perfil no lo muestra: no se ve ninguna prueba de lo que haces." },
+    { numero: "III", nombre: "La Emperatriz", simbolo: "flor", derecho: "Tienes comunidad: te comentan mucho para el tamaño de tu cuenta.", invertida: "Te siguen, pero no te hablan: casi no hay comentarios." },
+    { numero: "IV", nombre: "El Emperador", simbolo: "corona", derecho: "Eres constante: publicas seguido y parejo.", invertida: "Publicas a los saltos: rachas llenas y semanas vacías." },
+    { numero: "VI", nombre: "Los Enamorados", simbolo: "corazones", derecho: "Tus dos temas se potencian: uno trae gente y el otro la retiene.", invertida: "Dos cuentas en una: dos temas que se pelean y confunden a quien llega." },
+    { numero: "VII", nombre: "El Carro", simbolo: "flecha", derecho: "Tienes una serie o un formato que empuja: repítelo.", invertida: "Cada video arranca de cero: no hay una serie ni un formato que la gente reconozca." },
+    { numero: "IX", nombre: "El Ermitaño", simbolo: "farol", derecho: "Eliges bien qué publicar: cada post tiene trabajo.", invertida: "Desapareciste: publicas muy poco y el algoritmo se olvida de ti." },
+    { numero: "X", nombre: "La Rueda de la Fortuna", simbolo: "rueda", derecho: "Estás en racha: tus últimos videos andan mejor que los de antes.", invertida: "Vistas en montaña rusa: un video anda, el siguiente no, y no se sabe por qué." },
+    { numero: "XII", nombre: "El Colgado", simbolo: "soga", derecho: "Portadas claras: se entiende de qué es cada video antes de abrirlo.", invertida: "Portadas mudas: sin texto, o todas iguales, nadie sabe de qué es cada video." },
+    { numero: "XIII", nombre: "La Muerte", simbolo: "calavera", derecho: "Supiste matar lo que no andaba y cambiar a tiempo.", invertida: "Algo tiene que morir: un formato que ya no da vistas y sigues usando." },
+    { numero: "XIV", nombre: "La Templanza", simbolo: "copas", derecho: "Llegas más allá de los tuyos: tus videos los ve gente que todavía no te sigue.", invertida: "Solo te ven los tuyos, y a veces ni eso: tus vistas no pasan la cantidad de seguidores." },
+    { numero: "XV", nombre: "El Diablo", simbolo: "cuernos", derecho: "Sabes usar lo que está de moda sin perder tu mirada.", invertida: "Haces lo mismo que todos: temas que podría subir cualquier cuenta, sin nada tuyo." },
+    { numero: "XVI", nombre: "La Torre", simbolo: "torre", derecho: "Tu bio es un faro: dice qué haces y para quién.", invertida: "Tu bio no dice qué haces ni para quién: quien llega no sabe por qué seguirte." },
+    { numero: "XVII", nombre: "La Estrella", simbolo: "estrella", derecho: "Tienes un post estrella: haz más de eso.", invertida: "Ningún post despega todavía: falta encontrar tu estrella." },
+    { numero: "XVIII", nombre: "La Luna", simbolo: "luna", derecho: "El misterio te sirve: tu personaje despierta curiosidad.", invertida: "Cuenta sin cara: nadie sabe quién está detrás, y cuesta confiar." },
+    { numero: "XIX", nombre: "El Sol", simbolo: "sol", derecho: "Se te ve: tu cara y tu historia están en tu cuenta.", invertida: "Escondes lo mejor que tienes: a ti." },
+    { numero: "XX", nombre: "El Juicio", simbolo: "trompeta", derecho: "Pides bien: tu llamado a la acción es claro y tiene premio.", invertida: "No pides nada: ni link, ni «comenta», ni un motivo para seguirte." },
+    { numero: "XXI", nombre: "El Mundo", simbolo: "mundo", derecho: "Todo encaja: la bio, la grilla y la constancia dicen lo mismo.", invertida: "Tienes las piezas, pero no encajan: cada parte de tu perfil dice otra cosa." }
+  ];
+  // La carta del mazo que corresponde a una carta de la tirada: por símbolo, número o nombre.
+  function delMazo(c) {
+    return MAZO.filter(function (a) { return a.simbolo === c.simbolo; })[0] ||
+      MAZO.filter(function (a) { return a.numero === c.numero; })[0] ||
+      MAZO.filter(function (a) { return a.nombre.toLowerCase() === String(c.nombre).toLowerCase(); })[0] || null;
+  }
+
+  // ---------- Texto ----------
+  var DURO = String.fromCharCode(160);
+  // El texto limpio, y con el número pegado a su «%» (espacio que no corta el renglón).
+  function texto(v) { return v === null || v === undefined ? "" : String(v).trim().replace(/(\d) %/g, "$1" + DURO + "%"); }
+  function lista(v) { return Array.isArray(v) ? v.map(texto).filter(Boolean) : []; }
+  function miles(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+  function numeroONulo(v) {
+    if (v === null || v === undefined || v === "") return null;
+    var x = Number(v);
+    return isFinite(x) ? Math.round(x) : null;
+  }
+  function fechaLinda(f) {
+    var t = texto(f), m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t);
+    return m ? (+m[3]) + "/" + (+m[2]) + "/" + m[1] : t;
+  }
+  function cifras(d) {
+    var c = [];
+    if (d.seguidores !== null) c.push(miles(d.seguidores) + (d.seguidores === 1 ? " seguidor" : " seguidores"));
+    if (d.publicaciones !== null) c.push(miles(d.publicaciones) + (d.publicaciones === 1 ? " publicación" : " publicaciones"));
+    return c;
+  }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function renglones(ctx, contenido, ancho, max) {
+    // Un número nunca queda separado de su «%»: el espacio entre los dos no corta el renglón.
+    var palabras = contenido.replace(/(\d) %/g, "$1" + String.fromCharCode(160) + "%").split(/[ \t\n\r\f\v]+/), lineas = [], linea = "";
+    for (var i = 0; i < palabras.length; i++) {
+      var prueba = linea ? linea + " " + palabras[i] : palabras[i];
+      if (ctx.measureText(prueba).width > ancho && linea) { lineas.push(linea); linea = palabras[i]; }
+      else linea = prueba;
+    }
+    if (linea) lineas.push(linea);
+    if (lineas.length > max) {
+      lineas = lineas.slice(0, max);
+      // El «…» va después de una palabra entera, no en el medio de una.
+      var ultima = lineas[max - 1];
+      while (ctx.measureText(ultima + "…").width > ancho && /\s/.test(ultima)) ultima = ultima.replace(/\s+\S+$/, "");
+      while (ctx.measureText(ultima + "…").width > ancho && ultima.length) ultima = ultima.slice(0, -1);
+      lineas[max - 1] = ultima.replace(/[\s,;:]+$/, "") + "…";
+    }
+    return lineas;
+  }
+  // Siempre las mismas estrellas y el mismo grano para la misma semilla.
+  function azar(semilla) {
+    return function () {
+      semilla = semilla + 0x6D2B79F5 | 0;
+      var t = Math.imul(semilla ^ semilla >>> 15, 1 | semilla);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  // ---------- Geometría ----------
+  function r1(v) { return Math.round(v * 10) / 10; }
+  function pt(x, y) { return r1(x) + " " + r1(y); }
+  function circulo(cx, cy, r) { return "M" + pt(cx - r, cy) + "a" + r1(r) + " " + r1(r) + " 0 1 0 " + r1(2 * r) + " 0a" + r1(r) + " " + r1(r) + " 0 1 0 " + r1(-2 * r) + " 0Z"; }
+  function elipse(cx, cy, rx, ry) { return "M" + pt(cx - rx, cy) + "a" + r1(rx) + " " + r1(ry) + " 0 1 0 " + r1(2 * rx) + " 0a" + r1(rx) + " " + r1(ry) + " 0 1 0 " + r1(-2 * rx) + " 0Z"; }
+  function caja(x, y, w, h, r) {
+    r = Math.min(r || 0, w / 2, h / 2);
+    if (!r) return "M" + pt(x, y) + "h" + r1(w) + "v" + r1(h) + "h" + r1(-w) + "Z";
+    var a = "a" + r1(r) + " " + r1(r) + " 0 0 1 ";
+    return "M" + pt(x + r, y) + "h" + r1(w - 2 * r) + a + r1(r) + " " + r1(r) + "v" + r1(h - 2 * r) + a + r1(-r) + " " + r1(r) +
+      "h" + r1(-(w - 2 * r)) + a + r1(-r) + " " + r1(-r) + "v" + r1(-(h - 2 * r)) + a + r1(r) + " " + r1(-r) + "Z";
+  }
+  function poligono(p) { return "M" + p.map(function (q) { return pt(q[0], q[1]); }).join("L") + "Z"; }
+  function trazo(p) { return "M" + p.map(function (q) { return pt(q[0], q[1]); }).join("L"); }
+  function astro(cx, cy, R, r, puntas, giro) {
+    var p = [], g = giro === undefined ? -Math.PI / 2 : giro;
+    for (var i = 0; i < puntas * 2; i++) {
+      var a = g + i * Math.PI / puntas, d = i % 2 ? r : R;
+      p.push([cx + Math.cos(a) * d, cy + Math.sin(a) * d]);
+    }
+    return poligono(p);
+  }
+  function corazon(cx, cy, s) {
+    return "M" + pt(cx, cy + s * 0.85) + "C" + pt(cx - s * 1.25, cy + s * 0.05) + " " + pt(cx - s * 0.65, cy - s * 0.95) + " " + pt(cx, cy - s * 0.38) +
+      "C" + pt(cx + s * 0.65, cy - s * 0.95) + " " + pt(cx + s * 1.25, cy + s * 0.05) + " " + pt(cx, cy + s * 0.85) + "Z";
+  }
+  function rayos(cx, cy, ra, rb, angulos) {
+    return angulos.map(function (g) {
+      var a = g * Math.PI / 180;
+      return trazo([[cx + Math.cos(a) * ra, cy + Math.sin(a) * ra], [cx + Math.cos(a) * rb, cy + Math.sin(a) * rb]]);
+    }).join("");
+  }
+  function cada(paso, desde, hasta) { var a = []; for (var g = desde || 0; g < (hasta || 360); g += paso) a.push(g); return a; }
+  // Una elipse girada (hojas, pétalos).
+  function hoja(cx, cy, rx, ry, g) {
+    var a = g * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+    var x1 = cx - rx * c, y1 = cy - rx * s, x2 = cx + rx * c, y2 = cy + rx * s, arco = "A" + r1(rx) + " " + r1(ry) + " " + r1(g) + " 1 0 ";
+    return "M" + pt(x1, y1) + arco + pt(x2, y2) + arco + pt(x1, y1) + "Z";
+  }
+  function espiral(cx, cy, r, vueltas, sentido) {
+    var p = [];
+    for (var i = 0; i <= 40; i++) { var t = i / 40 * vueltas * 2 * Math.PI, rr = r * i / 40; p.push([cx + sentido * rr * Math.cos(t), cy + rr * Math.sin(t)]); }
+    return trazo(p);
+  }
+  function llama(cx, cy, s, abajo) {
+    var k = abajo ? -1 : 1;
+    return "M" + pt(cx, cy - 12 * s * k) + "C" + pt(cx + 6 * s, cy - 4 * s * k) + " " + pt(cx + 6 * s, cy + 3 * s * k) + " " + pt(cx, cy + 6 * s * k) +
+      "C" + pt(cx - 6 * s, cy + 3 * s * k) + " " + pt(cx - 6 * s, cy - 4 * s * k) + " " + pt(cx, cy - 12 * s * k) + "Z";
+  }
+  function gota(cx, cy, s) {
+    return "M" + pt(cx, cy - 3 * s) + "C" + pt(cx + 2 * s, cy - 0.5 * s) + " " + pt(cx + 2 * s, cy + 1.6 * s) + " " + pt(cx, cy + 2 * s) +
+      "C" + pt(cx - 2 * s, cy + 1.6 * s) + " " + pt(cx - 2 * s, cy - 0.5 * s) + " " + pt(cx, cy - 3 * s) + "Z";
+  }
+  function ladrillos(x, y, w, h, fila, largo) {
+    var d = "";
+    for (var j = 0; y + j * fila < y + h - 0.1; j++) {
+      var yy = y + j * fila;
+      if (j) d += trazo([[x, yy], [x + w, yy]]);
+      for (var xx = x + (j % 2 ? largo / 2 : largo); xx < x + w - 0.5; xx += largo) d += trazo([[xx, yy], [xx, Math.min(yy + fila, y + h)]]);
+    }
+    return d;
+  }
+  // Media luna o fase de luna: p de 0 (nueva) a 0,5 (llena) y 1. Devuelve la parte iluminada.
+  function faseLuna(cx, cy, r, p) {
+    var rx = Math.abs(Math.cos(2 * Math.PI * p)) * r, crece = p < 0.5;
+    var s1 = crece ? 1 : 0, s2 = crece ? (p < 0.25 ? 0 : 1) : (p > 0.75 ? 1 : 0);
+    return "M" + pt(cx, cy - r) + "A" + r1(r) + " " + r1(r) + " 0 0 " + s1 + " " + pt(cx, cy + r) + "A" + r1(Math.max(rx, 0.1)) + " " + r1(r) + " 0 0 " + s2 + " " + pt(cx, cy - r) + "Z";
+  }
+  function pentagrama(cx, cy, r, invertido) {
+    var p = [];
+    for (var k = 0; k < 5; k++) { var a = (invertido ? 90 : -90) * Math.PI / 180 + k * 2 * Math.PI / 5; p.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
+    return poligono([p[0], p[2], p[4], p[1], p[3]]);
+  }
+  // Una copa (cáliz) girada «g» grados alrededor de su centro; la boca, aparte.
+  function copa(cx, cy, s, g) {
+    var a = g * Math.PI / 180, c = Math.cos(a), si = Math.sin(a);
+    function p(x, y) { return pt(cx + (x * c - y * si) * s, cy + (x * si + y * c) * s); }
+    function ovalo(ox, oy, rx, ry) {
+      var q = [];
+      for (var i = 0; i < 20; i++) { var t = i / 20 * Math.PI * 2; q.push(p(ox + Math.cos(t) * rx, oy + Math.sin(t) * ry)); }
+      return "M" + q.join("L") + "Z";
+    }
+    return {
+      cuerpo: "M" + p(-9, -8) + "L" + p(9, -8) + "C" + p(9, 4) + " " + p(4, 7) + " " + p(0, 7) + "C" + p(-4, 7) + " " + p(-9, 4) + " " + p(-9, -8) + "Z" +
+        "M" + p(-1.8, 6.5) + "L" + p(1.8, 6.5) + "L" + p(1.8, 14) + "L" + p(-1.8, 14) + "Z" + ovalo(0, 15, 7, 2.4),
+      boca: ovalo(0, -8, 9, 2.4)
+    };
+  }
+  function cadena(x1, y1, x2, y2, n) {
+    var d = "", g = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+    for (var i = 0; i < n; i++) { var t = (i + 0.5) / n; d += hoja(x1 + (x2 - x1) * t, y1 + (y2 - y1) * t, 2.6, 1.4, g + (i % 2 ? 90 : 0)); }
+    return d;
+  }
+
+  // ---------- El dibujo: tinta, colores planos y sombreado de líneas ----------
+  var T = "#1d1410", AM = "#f2c12e", AM2 = "#f8dc6b", CA = "#c1121f", CA2 = "#e5484d", AZ = "#1f3fbf", AZ2 = "#4f7fdb", CE = "#8fcbe9",
+    VE = "#1e9e5a", VE2 = "#66c486", CR = "#f6ecd2", BL = "#fffaf0", GR = "#97a3b4", GR2 = "#c9cfd8", MA = "#7a4a22", MA2 = "#b57a45",
+    NA = "#f08a24", PU = "#6b3fa0", RS = "#f3a3b5", DO = "#c9a227";
+  function F(d, f, t) { return { d: d, f: f, t: t === undefined ? 1.3 : t }; }          // relleno con contorno de tinta
+  function S(d, w, c) { return { d: d, s: c || T, w: w || 1 }; }                           // trazo
+  function H(clip, ang, sep, w) { return { trama: { clip: clip, ang: ang, sep: sep || 2.6, w: w || 0.5 } }; } // sombreado
+  function L(d, f, op) { return { d: d, f: f, op: op }; }                                  // luz, sin tinta
+  function X(t, x, y, tam, f) { return { texto: t, x: x, y: y, tam: tam, f: f }; }          // letras
+  function entintado(d, w, c) { return [S(d, w + 2, T), S(d, w, c)]; }                     // trazo grueso con borde de tinta
+  function nube(cx, cy, s, color) {
+    var d = circulo(cx - 9 * s, cy + 2 * s, 6.5 * s) + circulo(cx - 2.5 * s, cy - 3 * s, 8 * s) + circulo(cx + 5.5 * s, cy - 1 * s, 7 * s) + circulo(cx + 11 * s, cy + 3 * s, 5.5 * s) + circulo(cx + 1 * s, cy + 4 * s, 7 * s);
+    return [S(d, 2.4), L(d, color || CR)];
+  }
+  function lineasTrama(ang, sep) {
+    var a = ang * Math.PI / 180, dx = Math.cos(a), dy = Math.sin(a), nx = -dy, ny = dx, d = "";
+    for (var k = -100; k <= 100; k += sep) {
+      var cx = 50 + nx * k, cy = 72 + ny * k;
+      d += "M" + pt(cx - dx * 110, cy - dy * 110) + "L" + pt(cx + dx * 110, cy + dy * 110);
+    }
+    return d;
+  }
+
+  // El paisaje de fondo, en un cuadro de 100x144: cielo, montañas y piso.
+  var CIELOS = { dia: AM2, amarillo: AM, cielo: CE, azul: AZ2, noche: AZ, nocheHonda: "#0d1846", tormenta: "#555a78", naranja: NA, alba: "#ecdfbf", infierno: "#3a1b52", gris: "#aabdd2" };
+  // El mismo trazo, reflejado de izquierda a derecha (solo para trazos con pares x y absolutos).
+  function espejo(d) {
+    var i = 0;
+    return d.replace(/-?\d+(\.\d+)?/g, function (n) { return i++ % 2 === 0 ? String(r1(100 - parseFloat(n))) : n; });
+  }
+  var MONTES = "M0 98L0 82L11 70L20 79L33 58L46 79L58 64L70 80L82 66L92 76L100 72L100 98Z";
+  var SUELO = "M0 98Q50 91 100 98L100 144L0 144Z";
+  function cielo(tipo) { return [L(caja(-2, -2, 104, 148), CIELOS[tipo])]; }
+  function estrellitas(n, semilla, color, alto) {
+    var rnd = azar(semilla), d = "";
+    for (var i = 0; i < n; i++) d += astro(4 + rnd() * 92, 4 + rnd() * (alto || 60), 1.6 + rnd() * 1.4, 0.6, 4);
+    return [L(d, color || CR)];
+  }
+  function montes(color, nieve) {
+    var e = [F(MONTES, color, 1.1), H(MONTES, -55, 3.2, 0.42)];
+    if (nieve) e.push(F(poligono([[33, 58], [28.1, 66], [30.8, 64.9], [33.2, 67.4], [35.6, 65], [38, 66]]) + poligono([[58, 64], [54, 69], [56.6, 68.2], [58.6, 70], [61.7, 69]]) + poligono([[82, 66], [77.7, 71], [80.4, 70.2], [83, 72], [87, 71]]), CR, 0.8));
+    return e;
+  }
+  function suelo(color) { return [F(SUELO, color, 1.1), H(SUELO, 6, 4.4, 0.42)]; }
+  function rosa(cx, cy, r, color) { return [F(circulo(cx, cy, r), color, 1), S(espiral(cx, cy, r * 0.75, 1.6, 1), 0.6)]; }
+
+  var ARTE = {
+    mochila: function () {
+      var saco = "M60 38C55 52 61 63 72 63C84 63 89 51 82 40C78 33 66 32 60 38Z", risco = "M70 98L100 95L100 144L84 144L79 122L73 110Z";
+      return cielo("dia").concat(montes(GR, true), suelo(VE), [
+        S(rayos(84, 18, 11, 18, cada(30)), 3.2), S(rayos(84, 18, 11, 18, cada(30)), 1.6, AM), F(circulo(84, 18, 9), AM, 1.2),
+        F(risco, GR2, 1.1), H(risco, 60, 2.4, 0.5)
+      ], entintado(trazo([[26, 122], [64, 40]]), 3, MA2), [
+        F(saco, CA, 1.4), H(saco, 45, 2.2, 0.5),
+        L(circulo(66, 46, 1.6) + circulo(74, 52, 1.6) + circulo(68, 57, 1.6) + circulo(78, 44, 1.6), CR),
+        F(caja(60, 34, 9, 5, 2), AM, 1),
+        S("M24 132C24 124 25 118 25 112", 1.6, VE), F(hoja(20.5, 124, 3.4, 1.6, -30), VE2, 0.8)
+      ], rosa(25, 108, 5.5, BL));
+    },
+    varita: function () {
+      var frente = caja(13, 106, 74, 40), mesa = caja(9, 99, 82, 8, 1), c = copa(27, 90, 0.75, 0), INF = "M35 18C35 10 45 10 50 18C55 26 65 26 65 18C65 10 55 10 50 18C45 26 35 26 35 18Z";
+      return cielo("amarillo").concat(rosa(8, 7, 4.5, CA), rosa(20, 4, 4, CA), rosa(80, 4, 4, CA), rosa(92, 7, 4.5, CA), [
+        F(hoja(13, 12, 3.6, 1.6, 30) + hoja(87, 12, 3.6, 1.6, -30) + hoja(27, 8, 3.2, 1.5, -20) + hoja(73, 8, 3.2, 1.5, 20), VE, 0.7),
+        S(INF, 3.8), S(INF, 2, AM),
+        S(rayos(56, 30, 6, 11, cada(45)), 1.1, T)
+      ], entintado(trazo([[57, 30], [43, 96]]), 3.8, BL), [
+        F(astro(57, 28, 6, 2.4, 4), AM2, 0.8),
+        F(frente, MA, 1.3), H(frente, 90, 2.6, 0.5), F(mesa, MA2, 1.3),
+        F(c.cuerpo, AM, 1.2), H(c.cuerpo, 75, 1.8, 0.45), F(c.boca, AM2, 0.8),
+        F(elipse(73, 97, 10, 3.4), AM, 1.2), S(elipse(73, 97, 6.5, 2), 0.7),
+        F(astro(32, 50, 3.6, 1.3, 4) + astro(70, 58, 3.2, 1.2, 4), BL, 0.5)
+      ]);
+    },
+    ojo: function () {
+      var velo = caja(22, 18, 56, 92), pilarB = caja(6, 21, 15, 102), pilarJ = caja(79, 21, 15, 102), piso = caja(-1, 122, 102, 23), d = "", h = "";
+      for (var i = 0; i < 5; i++) for (var j = 0; j < 6; j++) {
+        var x = 28 + i * 11 + (j % 2 ? 5.5 : 0), y = 26 + j * 14;
+        if (Math.abs(x - 50) < 16 && Math.abs(y - 60) < 14) continue;
+        d += circulo(x, y, 2.7); h += hoja(x + 2.6, y - 2.6, 1.8, 0.9, -45);
+      }
+      return cielo("gris").concat([
+        F(piso, "#d9cfb6", 1.1), H(piso, 0, 3, 0.42),
+        F(velo, AZ2, 1.2), F(d, CA, 0.7), F(h, VE, 0.5),
+        F(pilarB, T, 1.2), F(caja(4, 15, 19, 7, 1) + caja(4, 120, 19, 6, 1), GR, 1.1), X("B", 13.5, 78, 13, CR),
+        F(pilarJ, CR, 1.2), H(pilarJ, 90, 2.4, 0.45), F(caja(77, 15, 19, 7, 1) + caja(77, 120, 19, 6, 1), GR, 1.1), X("J", 86.5, 78, 13, T),
+        S(rayos(50, 60, 22, 29, cada(30)), 1.8, AM),
+        F("M28 60Q50 40 72 60Q50 80 28 60Z", BL, 1.4), F(circulo(50, 60, 9.5), AZ, 1.1), L(circulo(50, 60, 4.5), T), L(circulo(53, 57, 2), BL),
+        F("M37 106C41 118 59 118 63 106C57 113 43 113 37 106Z", AM, 1.2)
+      ]);
+    },
+    flor: function () {
+      var petalos = "";
+      for (var k = 0; k < 8; k++) { var a = k * 45, rad = a * Math.PI / 180; petalos += hoja(50 + Math.cos(rad) * 11, 54 + Math.sin(rad) * 11, 8, 4.6, a); }
+      var campo = "M0 100Q50 93 100 100L100 144L0 144Z", arboles = circulo(8, 88, 9) + circulo(20, 84, 10) + circulo(80, 84, 10) + circulo(93, 88, 9);
+      return cielo("dia").concat([
+        S(arboles, 2.6), L(arboles, "#178048"), H(circulo(80, 84, 10) + circulo(93, 88, 9), 50, 2.2, 0.45),
+        F(campo, AM, 1.1), H(campo, 90, 3, 0.5)
+      ], entintado("M50 62C50 78 48 92 48 112", 2.6, VE2), [
+        F(hoja(42, 86, 7, 3, -30) + hoja(56, 96, 7, 3, 25), VE2, 1),
+        F(petalos, CA2, 1.2), H(petalos, 40, 2.2, 0.42), F(circulo(50, 54, 7), AM, 1.1), F(circulo(50, 54, 3.4), MA2, 0.8),
+        S("M16 142V114M24 143V118M76 143V116M84 142V113", 1.2, MA),
+        F(hoja(16, 112, 2.2, 1.2, 90) + hoja(24, 116, 2.2, 1.2, 90) + hoja(76, 114, 2.2, 1.2, 90) + hoja(84, 111, 2.2, 1.2, 90), AM2, 0.6)
+      ]);
+    },
+    corona: function () {
+      var trono = caja(24, 86, 52, 54), respaldo = caja(30, 32, 40, 56), corona = poligono([[34, 82], [31, 60], [41, 70], [50, 53], [59, 70], [69, 60], [66, 82]]);
+      return cielo("naranja").concat([F(MONTES, CA, 1.1), H(MONTES, -55, 3, 0.42)], suelo(MA2), [
+        F(respaldo, GR2, 1.3), H(respaldo, 90, 2.6, 0.42),
+        F(trono, GR, 1.3), H(trono, -45, 2.4, 0.5),
+        F(circulo(30, 34, 7) + circulo(70, 34, 7), CR, 1.2), S(espiral(30, 34, 6, 1.6, -1) + espiral(70, 34, 6, 1.6, 1), 1),
+        F(corona, AM, 1.4), H(corona, 70, 2.2, 0.5), F(caja(33, 79, 34, 7, 1.5), CA, 1.2),
+        F(circulo(31, 59, 2.4) + circulo(50, 52, 2.8) + circulo(69, 59, 2.4), AZ2, 0.9), F(circulo(41, 82.5, 1.6) + circulo(59, 82.5, 1.6), BL, 0.6), F(circulo(50, 82.5, 2), VE, 0.7)
+      ]);
+    },
+    corazones: function () {
+      var monte = "M36 99L50 72L64 99Z", copa1 = circulo(86, 64, 10);
+      return cielo("cielo").concat(nube(16, 36, 0.8), nube(84, 34, 0.7), [
+        S(rayos(50, 20, 11, 18, cada(30)), 3.2), S(rayos(50, 20, 11, 18, cada(30)), 1.6, AM), F(circulo(50, 20, 9.5), AM, 1.3),
+        F(monte, GR, 1.1), F(poligono([[50, 72], [46.5, 78.8], [49, 77.6], [51, 79.4], [53.5, 78.8]]), CR, 0.7), H(monte, -50, 2.6, 0.42)
+      ], suelo(VE2), [
+        F(caja(11, 70, 5, 30, 1) + caja(84, 70, 5, 30, 1), MA, 1),
+        F(llama(13.5, 64, 0.9) + llama(8, 70, 0.6) + llama(19, 70, 0.6), NA, 0.9), F(llama(13.5, 66, 0.45), AM, 0.6),
+        F(copa1, VE, 1.1), H(copa1, 45, 2.2, 0.45), F(circulo(82, 61, 1.8) + circulo(89, 63, 1.8) + circulo(85, 68, 1.8), CA, 0.6),
+        F(corazon(57, 78, 11), RS, 1.3), F(corazon(43, 70, 13), CA, 1.4), H(corazon(43, 70, 13), 45, 2.2, 0.5)
+      ], entintado(trazo([[28, 92], [72, 56]]), 1.5, AM), [
+        F(poligono([[76, 53], [68.5, 55.6], [72.6, 60]]), AM, 0.9), F(poligono([[29, 91], [23, 92], [26, 86]]) + poligono([[29, 91], [30, 97], [24, 95]]), CA, 0.7)
+      ]);
+    },
+    flecha: function () {
+      var ciudad = "M0 98L0 84H8V80H12V84H22V76H26V72H30V76H34V84H52V78H56V74H60V78H64V84H76V80H80V84H90V78H94V84H100V98Z";
+      var festones = "M-1 22"; for (var x = 0; x < 100; x += 10) festones += "Q" + pt(x + 5, 30) + " " + pt(x + 10, 22);
+      return cielo("dia").concat([F(ciudad, GR2, 1.1), H(ciudad, 90, 3, 0.4)], suelo(VE), [
+        F("M0 101Q30 97 60 101T100 100L100 106Q60 102 30 106T0 106Z", CE, 0.9),
+        F(festones + "L101 22L101 -1L-1 -1Z", AZ, 1.1), L(astro(10, 9, 3, 1.2, 5) + astro(28, 13, 2.6, 1, 5) + astro(46, 7, 3, 1.2, 5) + astro(64, 12, 2.6, 1, 5) + astro(82, 8, 3, 1.2, 5) + astro(94, 15, 2.2, 0.9, 5), AM),
+        S(trazo([[8, 108], [34, 74]]) + trazo([[18, 132], [42, 100]]) + trazo([[36, 136], [52, 114]]), 0.8)
+      ], entintado(trazo([[20, 124], [72, 52]]), 3.4, MA2), [
+        F(poligono([[80, 42], [77.4, 57.4], [66.1, 49.2]]), AM, 1.2),
+        F(poligono([[28.2, 112.7], [22.4, 120.8], [17.6, 117.3], [23.4, 109.2]]) + poligono([[28.2, 112.7], [22.4, 120.8], [27.3, 124.3], [33.1, 116.2]]), CA, 1)
+      ]);
+    },
+    farol: function () {
+      var cerro = "M0 112L22 80L34 92L52 52L72 86L84 76L100 96L100 144L0 144Z", cuerpo = caja(56, 50, 16, 22, 3);
+      return cielo("noche").concat(estrellitas(16, 9, CR, 50), [
+        F(cerro, GR, 1.2), H(cerro, -50, 3, 0.42), F(poligono([[52, 52], [45.4, 66], [49, 64], [52, 67], [55, 64.2], [59, 65]]), CR, 0.8),
+        L(circulo(64, 61, 24), AM2, 0.18), L(circulo(64, 61, 15), AM2, 0.28),
+        S(rayos(64, 61, 15, 22, cada(40, 10)), 1.4, AM2)
+      ], entintado(trazo([[34, 142], [42, 34]]), 3.2, MA2), [
+        S(circulo(64, 43.5, 2.4), 1), S("M64 46V50", 1),
+        F(poligono([[55, 50], [73, 50], [69, 45.5], [59, 45.5]]), CA, 1.1),
+        F(cuerpo, AM2, 1.3), S(trazo([[60, 50], [60, 72]]) + trazo([[68, 50], [68, 72]]), 0.9),
+        F(astro(64, 61, 5.5, 3.2, 6), BL, 0.8),
+        F(poligono([[55, 72], [73, 72], [70, 77], [58, 77]]), CA, 1.1)
+      ]);
+    },
+    rueda: function () {
+      var aro = circulo(50, 72, 31);
+      return cielo("azul").concat(nube(15, 20, 0.85), nube(85, 20, 0.85), nube(15, 126, 0.85), nube(85, 126, 0.85), [
+        F(aro, AM, 1.6), H("M50 41A31 31 0 0 1 50 103Z", 45, 2.2, 0.45),
+        F(circulo(50, 72, 24), NA, 1.2), F(circulo(50, 72, 15), AZ, 1.2),
+        S(rayos(50, 72, 5, 24, cada(45)), 1.4),
+        F(circulo(50, 72, 5), AM, 1.1),
+        X("T", 50, 47.6, 7, CA), X("A", 77.6, 74.6, 7, CA), X("R", 50, 101.6, 7, CA), X("O", 22.4, 74.6, 7, CA)
+      ]);
+    },
+    soga: function () {
+      var tronco = caja(46, 22, 8, 106, 1), viga = caja(16, 20, 68, 8, 1);
+      return cielo("gris").concat(montes(GR2, true), suelo(VE2), [
+        F(tronco, MA, 1.3), H(tronco, 80, 1.8, 0.5), F(viga, MA, 1.3), H(viga, 10, 1.8, 0.5),
+        F(hoja(20, 18, 4, 2, -30) + hoja(30, 17, 4, 2, 20) + hoja(80, 18, 4, 2, 30) + hoja(58, 42, 4, 2, 40) + hoja(42, 72, 4, 2, -40) + hoja(58, 96, 4, 2, 30), VE, 0.8)
+      ], entintado(trazo([[70, 28], [70, 62]]), 2, AM), [
+        F(circulo(70, 64, 3.2), AM, 1),
+        L(circulo(70, 79, 11), AM2, 0.45), S(rayos(70, 79, 10, 15.5, cada(30)), 1.2, AM), S(circulo(70, 79, 8), 1.4, AM)
+      ]);
+    },
+    calavera: function () {
+      var craneo = circulo(55, 58, 18), mandibula = caja(45, 68, 20, 16, 5), bandera = "M21 30C29 28 35 34 43 32L41 52C34 54 28 48 21 50Z";
+      return cielo("alba").concat([
+        F(caja(28, 72, 10, 26) + caja(62, 72, 10, 26), GR, 1.1), F(caja(27, 69, 3, 4) + caja(31.5, 69, 3, 4) + caja(36, 69, 3, 4) + caja(61, 69, 3, 4) + caja(65.5, 69, 3, 4) + caja(70, 69, 3, 4), GR, 0.8),
+        S(rayos(50, 98, 11, 17, cada(30, 195, 346)), 1.2, AM), F("M40 98A10 10 0 0 1 60 98Z", AM, 1.1)
+      ], suelo("#7f9a55"), [
+        F("M42 144C48 126 58 116 54 104L58 104C64 118 54 128 52 144Z", CE, 1),
+        F(craneo, BL, 1.6), H("M55 40A18 18 0 0 1 55 76Z", 60, 2.2, 0.45), F(mandibula, BL, 1.4),
+        L(circulo(48.5, 58, 4.8) + circulo(61.5, 58, 4.8), T), L(poligono([[55, 64], [52.5, 69], [57.5, 69]]), T),
+        S(trazo([[48, 74], [62, 74]]) + trazo([[51.5, 74], [51.5, 82]]) + trazo([[55, 74], [55, 83]]) + trazo([[58.5, 74], [58.5, 82]]), 1)
+      ], entintado(trazo([[21, 28], [21, 130]]), 1.8, MA2), [
+        F(bandera, T, 1), F(circulo(32, 41, 4.6), BL, 0.9), S(espiral(32, 41, 3.4, 1.6, 1), 0.6)
+      ]);
+    },
+    copas: function () {
+      var a = copa(34, 50, 1.15, 38), b = copa(66, 92, 1.15, 0), camino = "M57 98C53 108 41 116 31 144L47 144C53 120 61 108 61 98Z", lago = elipse(80, 130, 22, 9);
+      return cielo("cielo").concat(montes(GR, true), [
+        S(rayos(59, 97, 6, 12, cada(30, 195, 346)), 1.2, AM), F("M54 97A5 5 0 0 1 64 97Z", AM, 0.9)
+      ], suelo(VE), [
+        F(camino, AM2, 0.9),
+        F(lago, AZ2, 1.2), S("M66 128Q70 126 74 128T82 128M76 133Q80 131 84 133T92 133", 0.7, BL),
+        F(hoja(14, 126, 5, 2.4, -60) + hoja(20, 124, 5, 2.4, -110) + hoja(10, 132, 4, 2, -20), VE2, 0.8), F(circulo(14, 120, 3.4) + circulo(21, 118, 3), PU, 0.9), F(circulo(14, 120, 1.2) + circulo(21, 118, 1.1), AM, 0.4),
+        F(b.cuerpo, AM, 1.3), H(b.cuerpo, 80, 2, 0.45), F(b.boca, CE, 0.9)
+      ], entintado("M43 51C56 51 66 64 66 82", 2.4, CE), [
+        S("M44 50C55 50.5 61 55 63.5 61", 0.7, BL),
+        F(a.cuerpo, AM, 1.3), H(a.cuerpo, 80, 2, 0.45), F(a.boca, CE, 0.9),
+        F(gota(60, 84, 0.8) + gota(72, 82, 0.7), CE, 0.6)
+      ]);
+    },
+    cuernos: function () {
+      // La cabeza del diablo: cara roja con perilla, orejas en punta, ojos amarillos,
+      // dos cuernos de cabra marfil arriba del pentagrama y alas de murciélago detrás.
+      var piso = caja(-1, 114, 102, 31), base = caja(28, 98, 44, 18, 1);
+      var ala = "M40 60C31 50 19 46 8 48C12 53 12 59 10 65C16 61 20 63 22 69C26 63 30 63 34 67C36 63 38 61 42 63Z";
+      var cuerno = "M44 38C40 27 32 19 22 17C16 16 12 20 14 25C16 21 20 20 24 22C30 25 35 32 38 41Z";
+      var anillos = "M41.6 33Q38.6 33.4 36.8 36.4M37.8 27.6Q34.6 28 32.8 31.2M32.8 23Q29.8 23.4 28.6 26.6M27.2 20.2Q24.8 20.6 23.8 23.4";
+      var cabeza = "M36 50C36 40 42 34 50 34C58 34 64 40 64 50C64 58 60 66 54 72L50 81L46 72C40 66 36 58 36 50Z";
+      var ojo = poligono([[40, 49], [47.5, 51.5], [46.5, 54], [40.5, 52]]);
+      var rnd = azar(5), brasas = "";
+      for (var i = 0; i < 14; i++) brasas += circulo(rnd() * 100, 4 + rnd() * 100, 0.7 + rnd() * 0.8);
+      return cielo("infierno").concat([L(brasas, NA)], [
+        F(piso, "#4a2b63", 1.1), H(piso, 0, 3.4, 0.4),
+        F(base, "#6a5486", 1.3), H(base, 45, 2.2, 0.5),
+        S(cadena(33, 106, 20, 140, 8) + cadena(67, 106, 80, 140, 8), 0.9, GR2),
+        F(ala + espejo(ala), "#3c2154", 1.2), S("M40 60L14 50M40 60L18 62M40 61L28 66" + espejo("M40 60L14 50M40 60L18 62M40 61L28 66"), 0.7, "#8a6aaa"),
+        F(poligono([[37, 47], [28, 40], [36, 55]]) + poligono([[63, 47], [72, 40], [64, 55]]), CA, 1.1),
+        F(cabeza, CA, 1.5), H("M50 34C58 34 64 40 64 50C64 58 60 66 54 72L50 81Z", 60, 2.2, 0.42),
+        F(cuerno + espejo(cuerno), "#ead9b0", 1.4), H(cuerno + espejo(cuerno), 25, 2, 0.4), S(anillos + espejo(anillos), 0.9),
+        F(ojo + espejo(ojo), AM, 0.8), L(caja(43.3, 50.6, 1.2, 2.6) + caja(55.5, 50.6, 1.2, 2.6), T),
+        S("M39 46.4L47.6 49.4M61 46.4L52.4 49.4", 1.8),
+        S("M50 54V57.5M48.6 57.8Q50 58.8 51.4 57.8", 0.8),
+        S("M43.5 61.5Q50 66.5 56.5 61.5", 1.2), F(poligono([[46, 62.6], [47.4, 66], [48.6, 63.2]]) + poligono([[54, 62.6], [52.6, 66], [51.4, 63.2]]), BL, 0.5),
+        F("M46.5 72.5L50 81.5L53.5 72.5Q50 75.5 46.5 72.5Z", T, 0)
+      ], entintado(pentagrama(50, 41.2, 5.4, true), 0.9, AM), entintado(trazo([[88, 76], [94, 108]]), 2, MA2), [
+        F(llama(94.6, 111, 0.65, true), NA, 1), F(llama(94.6, 110, 0.32, true), AM, 0.5)
+      ]);
+    },
+    torre: function () {
+      var roca = "M12 145L22 118L34 112L40 100L60 100L66 112L80 118L90 145Z", torre = "M38 100V40H62V100Z";
+      var g = 28 * Math.PI / 180, cc = Math.cos(g), ss = Math.sin(g);
+      function giro(p) { return [74 + (p[0] - 70) * cc - (p[1] - 24) * ss, 22 + (p[0] - 70) * ss + (p[1] - 24) * cc]; }
+      var corona = poligono([[63, 30], [62, 22], [66, 26], [70, 19], [74, 26], [78, 22], [77, 30]].map(giro));
+      var rnd = azar(13), gotas = "";
+      for (var i = 0; i < 9; i++) gotas += gota(6 + rnd() * 88, 30 + rnd() * 70, 0.8);
+      return cielo("tormenta").concat(nube(22, 14, 1.1, GR), nube(82, 12, 1, GR), [
+        F(roca, GR, 1.3), H(roca, 50, 2.4, 0.5),
+        F(torre, GR2, 1.4), S(ladrillos(38, 40, 24, 60, 5, 8), 0.5),
+        F(caja(36, 34, 6, 7) + caja(47, 34, 6, 7) + caja(58, 34, 6, 7), GR2, 1),
+        L(caja(46, 52, 8, 12, 4) + caja(46, 74, 8, 12, 4), T),
+        F(llama(50, 58, 0.7) + llama(50, 80, 0.7) + llama(42, 34, 0.6) + llama(58, 33, 0.6), NA, 0.8), F(llama(50, 60, 0.35) + llama(50, 82, 0.35), AM, 0.5),
+        F(corona, AM, 1.2),
+        F(poligono([[20, 4], [38, 30], [28, 30], [44, 54], [16, 24], [27, 24]]), AM, 1.2),
+        L(gotas, AM)
+      ]);
+    },
+    estrella: function () {
+      var lago = elipse(64, 128, 30, 10), grande = astro(50, 36, 20, 8, 8);
+      return cielo("cielo").concat([F("M0 98L0 86Q22 74 44 84T100 80L100 98Z", VE2, 1.1)], suelo(VE), [
+        F(lago, AZ2, 1.2), S("M44 126Q48 124 52 126T60 126M66 132Q70 130 74 132T82 132", 0.7, BL),
+        F(caja(84, 80, 4, 20, 1), MA, 1), F(circulo(86, 74, 8.5), VE, 1.1), H(circulo(86, 74, 8.5), 45, 2, 0.45), F("M84 64C86 61 90 61 91 64L88 65Z", CA, 0.7)
+      ], entintado("M30 80C34 88 28 96 33 104C37 112 40 116 46 122", 2.4, CE), entintado("M23 90C26 98 20 106 22 114C23 120 20 124 18 130", 2.4, CE), [
+        S("M30.6 82C33.6 88 28.6 96 33.6 103.6M23.5 92C25.6 98 20.6 106 22.5 113", 0.7, BL),
+        F(grande, AM, 1.5), F(astro(50, 36, 9, 4.6, 8, -Math.PI / 2 + Math.PI / 8), AM2, 0.8),
+        F(astro(14, 18, 4.6, 1.9, 8) + astro(22, 48, 4.2, 1.8, 8) + astro(12, 70, 4, 1.7, 8) + astro(86, 18, 4.6, 1.9, 8) + astro(80, 48, 4.2, 1.8, 8) + astro(50, 68, 4, 1.7, 8) + astro(32, 8, 3.6, 1.5, 8), BL, 0.9)
+      ]);
+    },
+    luna: function () {
+      // Un disco plateado con cráteres y, encima, la media luna de perfil con su cara.
+      // Sin rayos: solo un halo frío, y la noche más oscura.
+      var camino = "M47 98C45 106 57 112 53 120C49 128 41 132 43 144L61 144C59 134 65 128 61 118C57 110 53 104 55 98Z";
+      var perfil = "M50 21A15 15 0 0 0 50 51C50.8 49.4 50.4 47.6 50 46.4L48.6 44.8L49.8 43.8L48.2 42.6C47.2 41 45.2 39.6 45.2 38.2C46.4 37.4 47.2 36.4 47.2 35C47.2 31 49 26 50 21Z";
+      var rnd = azar(21), gotas = "";
+      for (var i = 0; i < 7; i++) gotas += gota(24 + rnd() * 52, 62 + rnd() * 26, 0.8);
+      return cielo("nocheHonda").concat(estrellitas(20, 4, CR, 70), [F(MONTES, "#4a3378", 1.1), H(MONTES, -55, 3, 0.4)], suelo("#2a5f47"), [
+        F(caja(6, 66, 13, 40) + caja(81, 66, 13, 40), GR2, 1.2), H(caja(81, 66, 13, 40), 90, 2.2, 0.45), F(poligono([[4, 66], [12.5, 54], [21, 66]]) + poligono([[79, 66], [87.5, 54], [96, 66]]), CA, 1.1), L(caja(10.5, 76, 4, 7, 2) + caja(85.5, 76, 4, 7, 2), T),
+        F(camino, AM2, 1), F(elipse(52, 141, 26, 7), AZ2, 1.2),
+        L(circulo(50, 36, 30), "#cfe3ff", 0.08), L(circulo(50, 36, 24), "#cfe3ff", 0.14),
+        F(circulo(50, 36, 17), "#c4d4ea", 1.5),
+        L(circulo(57.5, 30, 2.3) + circulo(60, 41, 1.7) + circulo(54.5, 46, 1.3) + circulo(62.4, 34.6, 1.1), "#a3b7d6"),
+        F(perfil, "#f4f6fb", 1.1),
+        S("M42.4 33.2Q43.6 34.4 44.8 33.4M41.8 31.2Q43.4 30.2 45 31", 0.8),
+        L(gotas, "#dfe9f5")
+      ]);
+    },
+    sol: function () {
+      var rayosD = "";
+      for (var k = 0; k < 16; k++) {
+        var a = (k * 22.5 - 90) * Math.PI / 180, w = 6 * Math.PI / 180;
+        if (k % 2 === 0) rayosD += poligono([[50 + Math.cos(a - w) * 18, 40 + Math.sin(a - w) * 18], [50 + Math.cos(a) * 34, 40 + Math.sin(a) * 34], [50 + Math.cos(a + w) * 18, 40 + Math.sin(a + w) * 18]]);
+      }
+      var ondas = "";
+      for (var j = 0; j < 8; j++) {
+        var b = (j * 45 - 67.5) * Math.PI / 180, nx = -Math.sin(b), ny = Math.cos(b), q = [];
+        for (var u = 0; u <= 6; u++) { var rr = 19 + u * 2.3, off = Math.sin(u * 1.6) * 1.6; q.push([50 + Math.cos(b) * rr + nx * off, 40 + Math.sin(b) * rr + ny * off]); }
+        ondas += trazo(q);
+      }
+      var muro = caja(-1, 92, 102, 26);
+      var girasoles = [[13, 88], [34, 85], [66, 85], [87, 88]];
+      return cielo("cielo").concat(suelo(VE2), [
+        F(rayosD, AM, 1.1), S(ondas, 3.4), S(ondas, 1.6, NA),
+        F(circulo(50, 40, 17), AM, 1.6), H("M50 23A17 17 0 0 1 50 57Z", 60, 2.4, 0.4),
+        S("M43 37Q45 35 47 37M53 37Q55 35 57 37", 1.1), S("M44 45Q50 50 56 45", 1.1), L(circulo(43, 42, 2.4) + circulo(57, 42, 2.4), NA, 0.55),
+        F(muro, GR2, 1.2), S(ladrillos(-1, 92, 102, 26, 5.2, 10), 0.55),
+        S(girasoles.map(function (g) { return trazo([[g[0], g[1]], [g[0], g[1] + 9]]); }).join(""), 1.6, VE),
+        F(girasoles.map(function (g) { return astro(g[0], g[1], 7, 3.2, 10); }).join(""), AM, 0.9),
+        F(girasoles.map(function (g) { return circulo(g[0], g[1], 3); }).join(""), MA, 0.7)
+      ]);
+    },
+    trompeta: function () {
+      var montesBlancos = "M0 122L14 102L26 114L40 94L56 116L70 100L84 114L100 104L100 130L0 130Z", mar = caja(-1, 126, 102, 19);
+      var banco = circulo(10, 22, 12) + circulo(26, 15, 13) + circulo(44, 19, 12) + circulo(62, 13, 13) + circulo(80, 19, 13) + circulo(96, 24, 10) + circulo(2, 32, 9) + circulo(36, 28, 10) + circulo(70, 27, 10);
+      return cielo("azul").concat([
+        F(montesBlancos, BL, 1.2), H(montesBlancos, -50, 3, 0.42),
+        F(mar, AZ, 1.1), S("M6 133Q10 131 14 133T22 133M40 137Q44 135 48 137T56 137M72 133Q76 131 80 133T88 133", 0.7, CR),
+        S(rayos(30, 78, 9, 17, [110, 135, 160, 185, 210]), 1.2, AM2)
+      ], entintado(trazo([[72, 34], [42, 66]]), 3.4, AM), [
+        F(poligono([[44, 62], [26, 70], [38, 84], [46, 66]]), AM, 1.3), H(poligono([[44, 62], [26, 70], [38, 84], [46, 66]]), 30, 1.8, 0.45), F(hoja(32, 77, 2.4, 9.6, 45), NA, 1),
+        F("M56 50L64 58L58 74L50 66Z", BL, 1.1), F(poligono([[55.5, 56], [57.5, 58], [56, 64], [54, 62]]) + poligono([[51.4, 61.6], [60.6, 60.6], [60, 62.6], [51, 63.6]]), CA, 0.4),
+        S(banco, 2.6), L(banco, CR)
+      ]);
+    },
+    mundo: function () {
+      var hojas = "", oscuras = "";
+      for (var k = 0; k < 30; k++) {
+        var t = k / 30 * Math.PI * 2, x = 50 + 27 * Math.cos(t), y = 72 + 42 * Math.sin(t), g = Math.atan2(42 * Math.cos(t), -27 * Math.sin(t)) * 180 / Math.PI;
+        if (Math.abs(Math.sin(t)) > 0.97) continue;
+        var par = hoja(x + Math.cos(t) * 2.2, y + Math.sin(t) * 2.2, 3.6, 1.6, g + 30) + hoja(x - Math.cos(t) * 2.2, y - Math.sin(t) * 2.2, 3.6, 1.6, g - 30);
+        if (k % 2) oscuras += par; else hojas += par;
+      }
+      var globo = circulo(50, 72, 15);
+      return cielo("azul").concat(nube(13, 16, 0.75), nube(87, 16, 0.75), nube(13, 128, 0.75), nube(87, 128, 0.75), [
+        F(hojas, VE, 0.7), F(oscuras, "#147a44", 0.7),
+        F(poligono([[44, 27], [56, 33], [56, 27], [44, 33]]) + poligono([[44, 111], [56, 117], [56, 111], [44, 117]]), CA, 1),
+        F(globo, AZ2, 1.4), F("M41 64C46 60 52 63 50 68C48 72 42 70 41 75C39 72 38 67 41 64Z" + "M54 76C59 74 63 78 60 83C58 86 53 85 53 81Z", VE2, 0.8),
+        S(elipse(50, 72, 6, 15) + trazo([[35, 72], [65, 72]]), 0.7, CR), H("M50 57A15 15 0 0 1 50 87Z", 35, 2.2, 0.42)
+      ]);
+    }
+  };
+  var SIMBOLOS = {};
+  Object.keys(ARTE).forEach(function (k) { SIMBOLOS[k] = ARTE[k](); });
+
+  function nombreSimbolo(simbolo, numero, nombre) {
+    if (SIMBOLOS[simbolo]) return simbolo;
+    var m = MAZO.filter(function (a) { return a.numero === numero || a.nombre === nombre; })[0];
+    return m ? m.simbolo : "estrella";
+  }
+
+  // ---------- Las cartas en SVG ----------
+  var cuenta = 0;
+  function svgDibujo(lista, p) {
+    var defs = "", cuerpo = "", n = 0;
+    lista.forEach(function (el) {
+      if (el.trama) {
+        var id = p + "t" + (n++);
+        defs += '<clipPath id="' + id + '"><path d="' + el.trama.clip + '"/></clipPath>';
+        cuerpo += '<path d="' + lineasTrama(el.trama.ang, el.trama.sep) + '" stroke="' + T + '" stroke-width="' + el.trama.w + '" fill="none" opacity="0.75" clip-path="url(#' + id + ')"/>';
+        return;
+      }
+      if (el.texto) {
+        cuerpo += '<text x="' + el.x + '" y="' + el.y + '" font-size="' + el.tam + '" fill="' + el.f + '" text-anchor="middle" font-family="Cinzel, Georgia, serif" font-weight="700">' + esc(el.texto) + "</text>";
+        return;
+      }
+      var a = ' fill="' + (el.f || "none") + '"';
+      if (el.op !== undefined) a += ' fill-opacity="' + el.op + '"';
+      if (el.s) a += ' stroke="' + el.s + '" stroke-width="' + el.w + '" stroke-linecap="round" stroke-linejoin="round"';
+      else if (el.t) a += ' stroke="' + T + '" stroke-width="' + el.t + '" stroke-linejoin="round"';
+      cuerpo += '<path d="' + el.d + '"' + a + "/>";
+    });
+    return { defs: defs, cuerpo: cuerpo };
+  }
+  // El grano del papel y los bordes gastados, para cartas y dorsos.
+  function defsPapel(p) {
+    return '<filter id="' + p + 'g" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="1.15" numOctaves="2" seed="7" result="n"/>' +
+      '<feColorMatrix in="n" type="matrix" values="0 0 0 0 0.32  0 0 0 0 0.22  0 0 0 0 0.1  2.3 0 0 0 -1.12"/></filter>' +
+      '<radialGradient id="' + p + 'e" cx="50%" cy="48%" r="72%"><stop offset="0.6" stop-color="#b8925a" stop-opacity="0"/><stop offset="1" stop-color="#9c6e36" stop-opacity="0.5"/></radialGradient>';
+  }
+  function trebol(cx, cy) { return circulo(cx - 1.5, cy, 1.4) + circulo(cx + 1.5, cy, 1.4) + circulo(cx, cy - 1.5, 1.4) + circulo(cx, cy + 1.5, 1.4); }
+  var MARCO = '<rect x="3.4" y="3.4" width="93.2" height="168.2" rx="3.6" fill="none" stroke="#a4161a" stroke-width="2.4"/>' +
+    '<rect x="5.9" y="5.9" width="88.2" height="163.2" rx="2.4" fill="none" stroke="' + DO + '" stroke-width="0.7"/>' +
+    '<path d="' + trebol(10.6, 10.6) + trebol(89.4, 10.6) + trebol(10.6, 164.4) + trebol(89.4, 164.4) + '" fill="#a4161a"/>' +
+    '<path d="' + circulo(10.6, 10.6, 0.9) + circulo(89.4, 10.6, 0.9) + circulo(10.6, 164.4, 0.9) + circulo(89.4, 164.4, 0.9) + '" fill="' + DO + '"/>' +
+    '<path d="' + poligono([[31, 15], [35, 8.5], [65, 8.5], [69, 15], [65, 21.5], [35, 21.5]]) + '" fill="#fbf3dc" stroke="' + DO + '" stroke-width="1.1"/>' +
+    '<path d="' + poligono([[31, 15], [35, 8.5], [65, 8.5], [69, 15], [65, 21.5], [35, 21.5]]) + '" fill="none" stroke="' + T + '" stroke-width="0.35"/>' +
+    '<path d="' + poligono([[15, 150], [6, 150], [9.5, 154.5], [6, 159], [15, 159]]) + poligono([[85, 150], [94, 150], [90.5, 154.5], [94, 159], [85, 159]]) + '" fill="#7e0c14" stroke="' + T + '" stroke-width="0.6"/>' +
+    '<path d="' + caja(14, 147, 72, 15) + '" fill="#b5161f" stroke="' + T + '" stroke-width="0.6"/>' +
+    '<path d="' + trazo([[15.5, 148.6], [84.5, 148.6]]) + trazo([[15.5, 160.4], [84.5, 160.4]]) + '" stroke="' + DO + '" stroke-width="0.5"/>';
+  var medidor = document.createElement("canvas").getContext("2d");
+  // El tamaño del nombre en la cinta: el más grande que entra en 64 de ancho, hasta 7,6.
+  function tamNombre(nombre) {
+    medidor.font = "100px 'IM Fell English', Georgia, serif";
+    return Math.max(4.6, Math.min(7.6, 64 / (medidor.measureText(nombre).width / 100)));
+  }
+  function svgCarta(c, o) {
+    o = o || {};
+    var p = "k" + (cuenta++) + "-", r = svgDibujo(SIMBOLOS[c.simbolo] || SIMBOLOS.estrella, p);
+    var tam = o.px ? ' width="' + o.px + '" height="' + Math.round(o.px * 1.75) + '"' : "";
+    var s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 175"' + tam + ' aria-hidden="true"><defs>' + defsPapel(p) +
+      '<clipPath id="' + p + 'v"><rect x="9" y="23" width="82" height="118"/></clipPath>' + r.defs + "</defs>";
+    s += '<rect x="0.6" y="0.6" width="98.8" height="173.8" rx="5" fill="#f3e6c8" stroke="' + T + '" stroke-width="0.8"/>';
+    if (!o.vacia) s += '<g clip-path="url(#' + p + 'v)">' + (o.imagen
+      ? '<image href="' + esc(o.imagen) + '" x="9" y="23" width="82" height="118" preserveAspectRatio="xMidYMid slice"/>'
+      : '<g transform="translate(9 23) scale(0.82)">' + r.cuerpo + "</g>") + "</g>";
+    s += '<rect x="9" y="23" width="82" height="118" fill="none" stroke="' + T + '" stroke-width="1"/>' + MARCO;
+    s += '<rect x="0.6" y="0.6" width="98.8" height="173.8" rx="5" fill="url(#' + p + 'e)"/>';
+    s += '<rect x="0.6" y="0.6" width="98.8" height="173.8" rx="5" filter="url(#' + p + 'g)" opacity="0.55"/>';
+    if (o.texto !== false) {
+      s += '<text x="50" y="17.9" text-anchor="middle" font-family="Cinzel, Georgia, serif" font-weight="700" font-size="7.6" letter-spacing="0.3" fill="#8f0f17">' + esc(c.numero) + "</text>";
+      s += '<text x="50" y="157.4" text-anchor="middle" font-family="\'IM Fell English\', Georgia, serif" font-size="' + r1(tamNombre(c.nombre)) + '" fill="#fbf3dc">' + esc(c.nombre) + "</text>";
+    }
+    return s + "</svg>";
+  }
+  // El dorso: azul profundo, sol y luna enfrentados, un ojo al centro y borde ornamental.
+  var SVG_DORSO = (function () {
+    var p = "dorso-", CRd = "#efe2c0", e = "";
+    var rayosSol = "";
+    for (var k = 0; k < 16; k++) {
+      var a = (k * 22.5 - 90) * Math.PI / 180, w = (k % 2 ? 5 : 8) * Math.PI / 180, R = k % 2 ? 15 : 18;
+      rayosSol += poligono([[50 + Math.cos(a - w) * 9.5, 38 + Math.sin(a - w) * 9.5], [50 + Math.cos(a) * R, 38 + Math.sin(a) * R], [50 + Math.cos(a + w) * 9.5, 38 + Math.sin(a + w) * 9.5]]);
+    }
+    var puntos = "";
+    for (var j = 0; j < 20; j++) { var b = j / 20 * Math.PI * 2; puntos += circulo(50 + Math.cos(b) * 28, 87.5 + Math.sin(b) * 28, 0.75); }
+    function lis(x, y, g) {
+      return '<g transform="translate(' + x + " " + y + ") rotate(" + g + ')"><path d="M0 -5C1.8 -3 1.8 -0.6 0 1.2C-1.8 -0.6 -1.8 -3 0 -5Z' +
+        "M0.4 0.4C2.6 -1.2 4.6 -0.6 4.4 1.4C3 0.6 1.8 1 0.4 1.6Z M-0.4 0.4C-2.6 -1.2 -4.6 -0.6 -4.4 1.4C-3 0.6 -1.8 1 -0.4 1.6Z" + '" fill="' + DO + '"/></g>';
+    }
+    e += '<rect x="0.6" y="0.6" width="98.8" height="173.8" rx="5" fill="url(#' + p + 'az)" stroke="' + T + '" stroke-width="0.8"/>';
+    e += '<rect x="7.2" y="7.2" width="85.6" height="160.6" fill="url(#' + p + 'rb)"/>';
+    e += '<rect x="3.4" y="3.4" width="93.2" height="168.2" rx="3.6" fill="none" stroke="' + DO + '" stroke-width="1.5"/>';
+    e += '<rect x="5.6" y="5.6" width="88.8" height="163.8" rx="2.6" fill="none" stroke="' + CRd + '" stroke-width="0.5"/>';
+    e += '<rect x="7.2" y="7.2" width="85.6" height="160.6" rx="2" fill="none" stroke="' + DO + '" stroke-width="0.6"/>';
+    e += lis(12, 12.5, -45) + lis(88, 12.5, 45) + lis(12, 162.5, -135) + lis(88, 162.5, 135);
+    e += '<path d="' + rayosSol + '" fill="' + DO + '" stroke="' + T + '" stroke-width="0.3"/>';
+    e += '<path d="' + circulo(50, 38, 9) + '" fill="' + DO + '" stroke="' + T + '" stroke-width="0.4"/>';
+    e += '<path d="M46.4 37Q47.6 36 48.8 37M51.2 37Q52.4 36 53.6 37M46.8 41Q50 43.6 53.2 41" fill="none" stroke="' + T + '" stroke-width="0.6" stroke-linecap="round"/>';
+    e += '<path d="' + circulo(50, 87.5, 25) + '" fill="#0b1748" stroke="' + DO + '" stroke-width="1.2"/>';
+    e += '<path d="' + circulo(50, 87.5, 22.5) + '" fill="none" stroke="' + CRd + '" stroke-width="0.45"/>';
+    e += '<path d="' + puntos + '" fill="' + DO + '"/>';
+    e += '<path d="' + rayos(50, 87.5, 14, 20, cada(30, 15)) + '" stroke="' + DO + '" stroke-width="0.9" stroke-linecap="round"/>';
+    e += '<path d="M34 87.5Q50 74 66 87.5Q50 101 34 87.5Z" fill="' + CRd + '" stroke="' + DO + '" stroke-width="0.8"/>';
+    e += '<path d="' + circulo(50, 87.5, 6.4) + '" fill="' + AZ2 + '" stroke="' + T + '" stroke-width="0.4"/>';
+    e += '<path d="' + circulo(50, 87.5, 3) + '" fill="' + T + '"/><path d="' + circulo(52, 85.6, 1.2) + '" fill="#fff"/>';
+    e += '<path d="M38 132C40 146 60 146 62 132C56 140 44 140 38 132Z" fill="' + CRd + '" stroke="' + DO + '" stroke-width="0.6"/>';
+    e += '<path d="M44.6 137.6Q46 139 47.6 138.6M44 134.6Q45.2 135.4 46.2 135" fill="none" stroke="' + T + '" stroke-width="0.5" stroke-linecap="round"/>';
+    e += '<path d="' + astro(50, 128, 3, 1.1, 4) + astro(24, 30, 3.2, 1.2, 4) + astro(76, 30, 3.2, 1.2, 4) + astro(24, 145, 3.2, 1.2, 4) + astro(76, 145, 3.2, 1.2, 4) + astro(17, 87.5, 3, 1.1, 4) + astro(83, 87.5, 3, 1.1, 4) + '" fill="' + DO + '"/>';
+    e += '<path d="' + astro(31, 60, 1.8, 0.7, 4) + astro(69, 60, 1.8, 0.7, 4) + astro(31, 115, 1.8, 0.7, 4) + astro(69, 115, 1.8, 0.7, 4) + '" fill="' + CRd + '"/>';
+    e += '<rect x="0.6" y="0.6" width="98.8" height="173.8" rx="5" filter="url(#' + p + 'g)" opacity="0.35"/>';
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 175" aria-hidden="true"><defs>' + defsPapel(p) +
+      '<radialGradient id="' + p + 'az" cx="50%" cy="50%" r="70%"><stop offset="0" stop-color="#2a4cb0"/><stop offset="1" stop-color="#0c1a52"/></radialGradient>' +
+      '<pattern id="' + p + 'rb" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M4 0L8 4L4 8L0 4Z" fill="none" stroke="' + DO + '" stroke-width="0.3" opacity="0.4"/></pattern>' +
+      "</defs>" + e + "</svg>";
+  })();
+
+  // Las fases de la luna que van arriba, en la página y en la imagen.
+  var FASES = [0.12, 0.26, 0.38, 0.5, 0.62, 0.74, 0.88];
+  function svgLunas() {
+    var e = "";
+    FASES.forEach(function (f, i) {
+      var cx = 14 + i * 32;
+      e += '<path d="' + circulo(cx, 14, 9) + '" fill="#3a0f45" stroke="#e9c46a" stroke-width="0.8"/>';
+      e += '<path d="' + faseLuna(cx, 14, 9, f) + '" fill="#f6ecd2"/>';
+      if (i < FASES.length - 1) e += '<path d="' + astro(cx + 16, 14, 2.6, 0.9, 4) + '" fill="#e9c46a"/>';
+    });
+    return '<svg class="lunas" viewBox="0 0 220 28">' + e + "</svg>";
+  }
+  function svgVelita() {
+    return '<svg class="velita" viewBox="0 0 30 64"><g class="flama"><path d="M15 6C20 14 20 22 15 30C10 22 10 14 15 6Z" fill="#ffb347"/><path d="M15 14C17.6 19 17.6 24 15 28C12.4 24 12.4 19 15 14Z" fill="#fff3c4"/></g>' +
+      '<path d="M15 30V33" stroke="#2a1d14" stroke-width="1"/><rect x="9" y="33" width="12" height="28" rx="2" fill="#f6ecd2" stroke="#2a1d14" stroke-width="0.8"/><path d="M9 38C12 40 14 37 16 40C18 42 20 38 21 39" fill="none" stroke="#e0cfa6" stroke-width="1.2"/></svg>';
+  }
+
+  // ---------- La imagen para historias (canvas) ----------
+  function cargarImagen(url) {
+    return new Promise(function (listo) {
+      var img = new Image();
+      img.onload = function () { listo(img); };
+      img.onerror = function () { listo(null); };
+      img.src = url;
+    });
+  }
+  function urlSVG(svg) { return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg); }
+  function cajaC(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+  var patronGrano = null;
+  function grano(ctx, color, alfa, semilla) {
+    var c = document.createElement("canvas"), g = c.getContext("2d"), rnd = azar(semilla), datos;
+    c.width = c.height = 160;
+    datos = g.createImageData(160, 160);
+    for (var i = 0; i < datos.data.length; i += 4) {
+      var v = rnd();
+      datos.data[i] = color[0]; datos.data[i + 1] = color[1]; datos.data[i + 2] = color[2];
+      datos.data[i + 3] = v > 0.5 ? Math.round((v - 0.5) * 2 * alfa * 255) : 0;
+    }
+    g.putImageData(datos, 0, 0);
+    return ctx.createPattern(c, "repeat");
+  }
+  // El paño: terciopelo carmesí a violeta, con textura, viñeta y luz de vela a los costados.
+  function pano(ctx, w, h) {
+    var f = ctx.createRadialGradient(w / 2, h * 0.36, 0, w / 2, h * 0.4, h * 0.7);
+    f.addColorStop(0, "#b3122a"); f.addColorStop(0.26, "#8c0f2b"); f.addColorStop(0.52, "#5e0b38"); f.addColorStop(0.78, "#2f0a42"); f.addColorStop(1, "#1c0631");
+    ctx.fillStyle = f; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = grano(ctx, [255, 220, 230], 0.09, 3); ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = grano(ctx, [20, 0, 20], 0.12, 8); ctx.fillRect(0, 0, w, h);
+    [[0, h * 0.38], [w, h * 0.38]].forEach(function (v) {
+      var g = ctx.createRadialGradient(v[0], v[1], 0, v[0], v[1], w * 0.55);
+      g.addColorStop(0, "rgba(255,178,84,0.32)"); g.addColorStop(0.4, "rgba(255,128,40,0.1)"); g.addColorStop(1, "rgba(255,128,40,0)");
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    });
+    var v = ctx.createRadialGradient(w / 2, h * 0.42, w * 0.35, w / 2, h * 0.45, h * 0.78);
+    v.addColorStop(0, "rgba(12,0,22,0)"); v.addColorStop(1, "rgba(12,0,22,0.72)");
+    ctx.fillStyle = v; ctx.fillRect(0, 0, w, h);
+  }
+  // Papel de libro antiguo: crema, grano, bordes gastados y filete carmesí y dorado.
+  function papel(ctx, x, y, w, h) {
+    ctx.save();
+    ctx.shadowColor = "rgba(10,0,20,0.55)"; ctx.shadowBlur = 30; ctx.shadowOffsetY = 12;
+    ctx.fillStyle = "#f3e6c8"; cajaC(ctx, x, y, w, h, 10); ctx.fill();
+    ctx.restore();
+    ctx.save();
+    cajaC(ctx, x, y, w, h, 10); ctx.clip();
+    ctx.fillStyle = grano(ctx, [110, 74, 30], 0.16, 5); ctx.fillRect(x, y, w, h);
+    var g = ctx.createRadialGradient(x + w / 2, y + h * 0.45, Math.min(w, h) * 0.3, x + w / 2, y + h / 2, Math.max(w, h) * 0.75);
+    g.addColorStop(0, "rgba(126,84,34,0)"); g.addColorStop(1, "rgba(126,84,34,0.4)");
+    ctx.fillStyle = g; ctx.fillRect(x, y, w, h);
+    ctx.restore();
+    ctx.strokeStyle = "#a4161a"; ctx.lineWidth = 3; cajaC(ctx, x + 10, y + 10, w - 20, h - 20, 6); ctx.stroke();
+    ctx.strokeStyle = DO; ctx.lineWidth = 1.4; cajaC(ctx, x + 16, y + 16, w - 32, h - 32, 4); ctx.stroke();
+  }
+  // El pergamino: el papel con los dos rollos a los costados.
+  function pergamino(ctx, x, y, w, h) {
+    papel(ctx, x, y, w, h);
+    [x - 16, x + w - 18].forEach(function (rx) {
+      var g = ctx.createLinearGradient(rx, 0, rx + 34, 0);
+      g.addColorStop(0, "#6e4521"); g.addColorStop(0.3, "#c9a26a"); g.addColorStop(0.52, "#f6ead0"); g.addColorStop(0.78, "#b98a4f"); g.addColorStop(1, "#5e3a1c");
+      ctx.save(); ctx.shadowColor = "rgba(8,0,16,0.5)"; ctx.shadowBlur = 16; ctx.shadowOffsetY = 6;
+      ctx.fillStyle = g; cajaC(ctx, rx, y - 14, 34, h + 28, 17); ctx.fill(); ctx.restore();
+    });
+  }
+  function lunasC(ctx, cy, r, paso) {
+    var ancho = (FASES.length - 1) * paso, x0 = 540 - ancho / 2;
+    FASES.forEach(function (f, i) {
+      var cx = x0 + i * paso;
+      ctx.fillStyle = "#3a0f45"; ctx.fill(new Path2D(circulo(cx, cy, r)));
+      ctx.strokeStyle = "#e9c46a"; ctx.lineWidth = 2; ctx.stroke(new Path2D(circulo(cx, cy, r)));
+      ctx.fillStyle = "#f6ecd2"; ctx.fill(new Path2D(faseLuna(cx, cy, r, f)));
+      if (i < FASES.length - 1) { ctx.fillStyle = "#e9c46a"; ctx.fill(new Path2D(astro(cx + paso / 2, cy, 7, 2.4, 4))); }
+    });
+  }
+  // Una carta en el canvas: el SVG (sin letras) y encima el número y el nombre con las
+  // fuentes. Si la carta tiene ilustración propia, el SVG va sin dibujo y la foto se pinta aparte.
+  function cartaC(ctx, c, cx, cy, w, giro) {
+    var h = w * 1.75, foto = c.imagenCanvas;
+    return Promise.all([
+      cargarImagen(urlSVG(svgCarta(c, { texto: false, px: Math.round(w * 2), vacia: !!foto }))),
+      foto ? cargarImagen(foto) : Promise.resolve(null)
+    ]).then(function (imgs) {
+      var img = imgs[0], ilustracion = imgs[1], u = w / 100;
+      ctx.save();
+      ctx.translate(cx, cy); ctx.rotate((giro || 0) * Math.PI / 180);
+      ctx.save(); ctx.shadowColor = "rgba(8,0,16,0.6)"; ctx.shadowBlur = 30; ctx.shadowOffsetY = 14;
+      ctx.fillStyle = "#3a1a1a"; cajaC(ctx, -w / 2, -h / 2, w, h, w * 0.05); ctx.fill(); ctx.restore();
+      if (c.invertida) ctx.rotate(Math.PI);
+      if (img) ctx.drawImage(img, -w / 2, -h / 2, w, h);
+      if (ilustracion) {
+        var vx = -w / 2 + 9 * u, vy = -h / 2 + 23 * u, vw = 82 * u, vh = 118 * u;
+        var k = Math.max(vw / ilustracion.width, vh / ilustracion.height), iw = ilustracion.width * k, ih = ilustracion.height * k;
+        ctx.save(); ctx.beginPath(); ctx.rect(vx, vy, vw, vh); ctx.clip();
+        ctx.drawImage(ilustracion, vx + (vw - iw) / 2, vy + (vh - ih) / 2, iw, ih);
+        ctx.restore();
+        ctx.strokeStyle = T; ctx.lineWidth = u; ctx.strokeRect(vx, vy, vw, vh);
+      }
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#8f0f17"; ctx.font = "700 " + r1(7.6 * u) + 'px "Cinzel"';
+      ctx.fillText(c.numero, 0, -h / 2 + 17.9 * u);
+      ctx.fillStyle = "#fbf3dc"; ctx.font = r1(tamNombre(c.nombre) * u) + 'px "IM Fell English"';
+      ctx.fillText(c.nombre, 0, -h / 2 + 157.4 * u);
+      ctx.restore();
+    });
+  }
+
+  var TAMANOS = [
+    { lect: 38, lineas: 3, prof: 44 }, { lect: 36, lineas: 3, prof: 42 }, { lect: 34, lineas: 3, prof: 40 },
+    { lect: 32, lineas: 3, prof: 38 }, { lect: 32, lineas: 2, prof: 36 }
+  ];
+  function dibujar(d) {
+    var W = 1080, H = 1920, c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    var ctx = c.getContext("2d");
+    pano(ctx, W, H);
+    lunasC(ctx, 74, 17, 66);
+    var rnd = azar(17);
+    for (var i = 0; i < 40; i++) {
+      var sx = rnd() * W, sy = rnd() * H;
+      if (sy > 120 && sy < 1880 && sx > 70 && sx < 1010) continue;
+      ctx.fillStyle = i % 3 ? "rgba(246,236,210,0.8)" : "#e9c46a";
+      ctx.fill(new Path2D(astro(sx, sy, 4 + rnd() * 6, 1.4, 4)));
+    }
+    ctx.textAlign = "center";
+    ctx.save(); ctx.shadowColor = "rgba(255,190,110,0.5)"; ctx.shadowBlur = 24;
+    ctx.fillStyle = "#f6ecd2"; ctx.font = '900 52px "Cinzel Decorative"';
+    ctx.fillText("El Tarot del Algoritmo", W / 2, 168);
+    ctx.restore();
+    // La cuenta en un renglón: se achica la letra y, si igual no entra, se corta.
+    var cuentaTxt = d.cuenta || "Tu cuenta", tam = 44;
+    ctx.font = "700 " + tam + 'px "Cinzel"';
+    while (tam > 26 && ctx.measureText(cuentaTxt).width > 900) { tam -= 2; ctx.font = "700 " + tam + 'px "Cinzel"'; }
+    if (ctx.measureText(cuentaTxt).width > 900) { while (cuentaTxt.length > 1 && ctx.measureText(cuentaTxt + "…").width > 900) cuentaTxt = cuentaTxt.slice(0, -1); cuentaTxt += "…"; }
+    ctx.fillStyle = "#f4d58d"; ctx.fillText(cuentaTxt, W / 2, 232);
+    var linea = (d.red ? [d.red] : []).concat(cifras(d)).join(" · ");
+    if (linea) { ctx.fillStyle = "#f0dfbf"; ctx.font = 'italic 600 34px "Cormorant Garamond"'; ctx.fillText(linea, W / 2, 278); }
+
+    var CW = 268, lugares = [{ x: 262, y: 548, g: -7 }, { x: 540, y: 528, g: 0 }, { x: 818, y: 548, g: 7 }];
+    var orden = [0, 2, 1].filter(function (i) { return d.cartas[i]; });
+    return orden.reduce(function (cadena, i) {
+      return cadena.then(function () { var l = lugares[i]; return cartaC(ctx, d.cartas[i], l.x, l.y, CW, l.g); });
+    }, Promise.resolve()).then(function () {
+      d.cartas.forEach(function (carta, i) {
+        var l = lugares[i], p = POSICIONES[carta.posicion];
+        ctx.textAlign = "center"; ctx.fillStyle = "#f4d58d"; ctx.font = '700 30px "Cinzel"';
+        ctx.fillText(p.titulo.toUpperCase(), l.x, 852);
+        if (carta.invertida) {
+          ctx.font = '700 22px "Cinzel"';
+          var aw = ctx.measureText("INVERTIDA").width + 34;
+          ctx.fillStyle = "#c1121f"; cajaC(ctx, l.x - aw / 2, 868, aw, 38, 3); ctx.fill();
+          ctx.strokeStyle = DO; ctx.lineWidth = 2; ctx.stroke();
+          ctx.fillStyle = "#f6ecd2"; ctx.fillText("INVERTIDA", l.x, 895);
+        }
+      });
+
+      // Las lecturas en el libro y la profecía en el pergamino, del tamaño que entre.
+      var arriba = 936, abajo = 1748, partes, profecia, alto;
+      function armar(t) {
+        var b = [];
+        d.cartas.forEach(function (carta) {
+          var p = POSICIONES[carta.posicion];
+          b.push({ tipo: "rotulo", nombre: carta.nombre + (carta.invertida ? " (invertida)" : ""), pos: p.titulo.toUpperCase(), alto: 46, antes: b.length ? 20 : 0 });
+          ctx.font = "italic 600 " + t.lect + 'px "Cormorant Garamond"';
+          b.push({ tipo: "texto", fuente: "italic 600 " + t.lect + 'px "Cormorant Garamond"', lineas: renglones(ctx, carta.lectura || "", 830, t.lineas), alto: Math.round(t.lect * 1.2), antes: 2 });
+        });
+        ctx.font = "italic 700 " + t.prof + 'px "Cormorant Garamond"';
+        var pl = d.profecia ? renglones(ctx, d.profecia, 780, 3) : [];
+        return { libro: b, prof: pl, profAlto: Math.round(t.prof * 1.18), profTam: t.prof };
+      }
+      function medir(a) {
+        var libro = a.libro.reduce(function (s, p) { return s + p.antes + (p.lineas ? p.lineas.length * p.alto : p.alto); }, 0) + 84;
+        var prof = a.prof.length ? 70 + a.prof.length * a.profAlto + 30 : 0;
+        return { libro: libro, prof: prof, total: libro + (prof ? prof + 40 : 0) };
+      }
+      for (var k = 0; k < TAMANOS.length; k++) { partes = armar(TAMANOS[k]); alto = medir(partes); if (alto.total <= abajo - arriba) break; }
+      var y = arriba + Math.max(0, (abajo - arriba - alto.total) / 2);
+      papel(ctx, 70, y, 940, alto.libro);
+      var yy = y + 44;
+      partes.libro.forEach(function (p) {
+        yy += p.antes;
+        if (p.tipo === "rotulo") {
+          ctx.textAlign = "left";
+          ctx.fillStyle = "#7a5a2a"; ctx.font = '700 22px "Cinzel"';
+          var pw = ctx.measureText(p.pos + "  ·  ").width;
+          ctx.fillText(p.pos + "  ·  ", 116, yy + 33);
+          ctx.fillStyle = "#a4161a"; ctx.font = '34px "IM Fell English"';
+          ctx.fillText(renglones(ctx, p.nombre, 830 - pw, 1)[0], 116 + pw, yy + 34);
+          yy += p.alto; return;
+        }
+        ctx.textAlign = "left"; ctx.font = p.fuente; ctx.fillStyle = "#2a1d14";
+        p.lineas.forEach(function (l) { ctx.fillText(l, 116, yy + p.alto * 0.8); yy += p.alto; });
+      });
+      if (partes.prof.length) {
+        var py = y + alto.libro + 40;
+        pergamino(ctx, 120, py, 840, alto.prof);
+        ctx.textAlign = "center"; ctx.fillStyle = "#a4161a"; ctx.font = '700 28px "Cinzel Decorative"';
+        ctx.fillText("La profecía", W / 2, py + 54);
+        ctx.fillStyle = "#2a1d14"; ctx.font = "italic 700 " + partes.profTam + 'px "Cormorant Garamond"';
+        partes.prof.forEach(function (l, i) { ctx.fillText(l, W / 2, py + 70 + (i + 0.82) * partes.profAlto); });
+      }
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#f6ecd2"; ctx.font = '700 46px "Cinzel"';
+      ctx.fillText("@crece_de_cero", W / 2, 1812);
+      ctx.fillStyle = "#f0dfbf"; ctx.font = 'italic 600 32px "Cormorant Garamond"';
+      ctx.fillText("Apps súper locas · Día 2", W / 2, 1860);
+      return c;
+    });
+  }
+
+  // La hoja con todas las cartas del mazo, para revisar cómo quedó cada una.
+  function dibujarHoja() {
+    var CW = 300, filas = Math.ceil(MAZO.length / 3), W = 1080, H = 170 + filas * (CW * 1.75 + 64) + 30;
+    var c = document.createElement("canvas");
+    c.width = W; c.height = H;
+    var ctx = c.getContext("2d");
+    pano(ctx, W, H);
+    ctx.textAlign = "center"; ctx.fillStyle = "#f6ecd2"; ctx.font = '900 44px "Cinzel Decorative"';
+    ctx.fillText("Los " + MAZO.length + " arcanos del algoritmo", W / 2, 100);
+    return MAZO.reduce(function (cadena, a, i) {
+      return cadena.then(function () {
+        var fila = Math.floor(i / 3), enFila = Math.min(3, MAZO.length - fila * 3), col = i % 3;
+        var x = 54 + (3 - enFila) * (CW + 36) / 2 + col * (CW + 36) + CW / 2, y = 170 + fila * (CW * 1.75 + 64) + CW * 0.875;
+        return cartaC(ctx, { numero: a.numero, nombre: a.nombre, simbolo: a.simbolo, invertida: false }, x, y, CW, 0).then(function () {
+          ctx.textAlign = "center"; ctx.fillStyle = "#f0dfbf"; ctx.font = 'italic 600 28px "Cormorant Garamond"';
+          ctx.fillText(a.simbolo, x, y + CW * 0.875 + 38);
+        });
+      });
+    }, Promise.resolve()).then(function () { return c; });
+  }
+
+  function fuentesListas() {
+    if (!document.fonts || !document.fonts.load) return Promise.resolve();
+    var carga = Promise.all([
+      document.fonts.load('900 52px "Cinzel Decorative"'),
+      document.fonts.load('700 30px "Cinzel"'),
+      document.fonts.load('34px "IM Fell English"'),
+      document.fonts.load('italic 600 36px "Cormorant Garamond"'),
+      document.fonts.load('italic 700 40px "Cormorant Garamond"'),
+      document.fonts.load('600 18px "Cormorant Garamond"')
+    ]).catch(function () {});
+    return Promise.race([carga, new Promise(function (listo) { setTimeout(listo, 2500); })]);
+  }
+
+  // ---------- La página ----------
+  var actual = null, temporizadores = [];
+  var quieto = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.documentElement.style.setProperty("--reparto", REPARTO + "ms");
+  document.documentElement.style.setProperty("--vuelta", VUELTA + "ms");
+  // La textura del terciopelo y el grano del papel, generados una vez.
+  (function () {
+    var tela = '<svg xmlns="http://www.w3.org/2000/svg" width="260" height="260"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/>' +
+      '<feColorMatrix values="0 0 0 0 1  0 0 0 0 0.85  0 0 0 0 0.9  0 0 0 0.11 0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>';
+    var hojaPapel = '<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/>' +
+      '<feColorMatrix values="0 0 0 0 0.42  0 0 0 0 0.29  0 0 0 0 0.12  0 0 0 0.16 0"/></filter><rect width="100%" height="100%" filter="url(#n)"/></svg>';
+    document.documentElement.style.setProperty("--ruido", 'url("' + urlSVG(tela) + '")');
+    document.documentElement.style.setProperty("--grano", 'url("' + urlSVG(hojaPapel) + '")');
+    document.getElementById("cielo-lunas").innerHTML = svgVelita() + svgLunas() + svgVelita();
+  })();
+
+  function nuevaCarta(c, i) {
+    var slot = document.createElement("div");
+    slot.className = "slot s" + (i + 1) + (c.invertida ? " invertida" : "");
+    slot.dataset.pos = c.posicion;
+    var carta = document.createElement("div");
+    carta.className = "carta";
+    carta.setAttribute("role", "img");
+    var p = POSICIONES[c.posicion];
+    carta.setAttribute("aria-label", (p ? p.titulo + ": " : "") + c.numero + ", " + c.nombre + (c.invertida ? ", invertida" : ""));
+    var giro = document.createElement("div"); giro.className = "giro";
+    var dorso = document.createElement("div"); dorso.className = "cara dorso"; dorso.innerHTML = SVG_DORSO;
+    var frente = document.createElement("div"); frente.className = "cara frente"; frente.innerHTML = svgCarta(c);
+    giro.appendChild(dorso); giro.appendChild(frente);
+    carta.appendChild(giro);
+    var polvo = document.createElement("div");
+    polvo.className = "polvo"; polvo.setAttribute("aria-hidden", "true");
+    for (var k = 0; k < 10; k++) {
+      var s = document.createElement("i"), a = k / 10 * Math.PI * 2 + 0.3;
+      s.style.setProperty("--px", Math.round(Math.cos(a) * 70) + "px");
+      s.style.setProperty("--py", Math.round(Math.sin(a) * 100) + "px");
+      s.style.setProperty("--c", ["#f4d58d", "#fff3c4", "#e9c46a", "#ffffff", "#f08a24"][k % 5]);
+      polvo.appendChild(s);
+    }
+    carta.appendChild(polvo);
+    slot.appendChild(carta);
+    if (p) { var pos = document.createElement("p"); pos.className = "posicion"; pos.textContent = p.titulo; slot.appendChild(pos); }
+    if (c.invertida) { var inv = document.createElement("p"); inv.className = "etiqueta-invertida"; inv.textContent = "INVERTIDA"; slot.appendChild(inv); }
+    return slot;
+  }
+
+  function nuevaLectura(c) {
+    var p = POSICIONES[c.posicion];
+    var li = document.createElement("li");
+    li.className = "lectura"; li.dataset.pos = c.posicion;
+    var pos = document.createElement("p"); pos.className = "pos"; pos.textContent = p.romano + " · El " + p.titulo.toLowerCase() + ", " + p.sub;
+    var h3 = document.createElement("h3"); h3.textContent = c.numero + " · " + c.nombre;
+    if (c.invertida) { var tag = document.createElement("small"); tag.textContent = "Invertida"; h3.appendChild(tag); }
+    li.appendChild(pos); li.appendChild(h3);
+    // Lo que significa la carta en el mazo, al derecho o invertida; después, lo que dice de este perfil.
+    var arcano = delMazo(c), significado = arcano ? texto(c.invertida ? arcano.invertida : arcano.derecho) : "";
+    if (significado) {
+      var sig = document.createElement("p"), sb = document.createElement("b"), si = document.createElement("i");
+      sig.className = "significa"; sb.textContent = "Qué significa";
+      si.textContent = c.nombre + ", " + (c.invertida ? "invertida" : "derecho") + ":";
+      sig.appendChild(sb); sig.appendChild(document.createTextNode(" · ")); sig.appendChild(si);
+      sig.appendChild(document.createTextNode(" " + significado));
+      li.appendChild(sig);
+    }
+    if (c.lectura) { var voz = document.createElement("p"); voz.className = "voz"; voz.textContent = c.lectura; li.appendChild(voz); }
+    if (c.prueba) {
+      var pr = document.createElement("p"), b = document.createElement("b");
+      pr.className = "prueba"; b.textContent = "La prueba";
+      pr.appendChild(b); pr.appendChild(document.createTextNode(c.prueba));
+      li.appendChild(pr);
+    }
+    return li;
+  }
+
+  // Cada carta sale del mazo: lo que tiene que viajar depende de dónde quedó su lugar.
+  function medirMazo() {
+    var tirada = document.getElementById("tirada"), slots = tirada.querySelectorAll(".slot"), W = tirada.clientWidth;
+    Array.prototype.forEach.call(slots, function (s) { s.style.setProperty("--dx", Math.round(W / 2 - (s.offsetLeft + s.offsetWidth / 2)) + "px"); });
+  }
+
+  function tirar(conMovimiento) {
+    temporizadores.forEach(clearTimeout);
+    temporizadores = [];
+    var tirada = document.getElementById("tirada"), slots = tirada.querySelectorAll(".slot");
+    var lecturas = document.querySelectorAll("#lecturas .lectura"), profecia = document.getElementById("bloque-profecia");
+    tirada.classList.add("sin-transicion");
+    tirada.classList.remove("repartido");
+    Array.prototype.forEach.call(slots, function (s) { s.classList.remove("repartida", "dada", "quieta"); });
+    Array.prototype.forEach.call(lecturas, function (l) { l.classList.remove("visible"); });
+    profecia.classList.remove("visible");
+    medirMazo();
+    if (!conMovimiento) {
+      tirada.classList.add("repartido");
+      Array.prototype.forEach.call(slots, function (s) { s.classList.add("repartida", "quieta"); });
+      Array.prototype.forEach.call(lecturas, function (l) { l.classList.add("visible"); });
+      profecia.classList.add("visible");
+      return;
+    }
+    void tirada.offsetWidth;
+    tirada.classList.remove("sin-transicion");
+    Array.prototype.forEach.call(slots, function (s, i) {
+      temporizadores.push(setTimeout(function () { s.classList.add("repartida"); }, ESPERA + i * ENTRE_REPARTOS));
+    });
+    var finReparto = ESPERA + (slots.length - 1) * ENTRE_REPARTOS + REPARTO;
+    temporizadores.push(setTimeout(function () { tirada.classList.add("repartido"); }, finReparto));
+    Array.prototype.forEach.call(slots, function (s, i) {
+      var inicio = finReparto + ANTES_DE_GIRAR + i * (VUELTA + PAUSA);
+      temporizadores.push(setTimeout(function () { s.classList.add("dada"); }, inicio));
+      temporizadores.push(setTimeout(function () { if (lecturas[i]) lecturas[i].classList.add("visible"); }, inicio + VUELTA));
+    });
+    temporizadores.push(setTimeout(function () { profecia.classList.add("visible"); }, finReparto + ANTES_DE_GIRAR + slots.length * (VUELTA + PAUSA)));
+  }
+
+  // Si existe cartas/<simbolo>.webp, la carta usa esa ilustración.
+  var ilustraciones = {};
+  function buscarIlustracion(simbolo) {
+    if (simbolo in ilustraciones) return Promise.resolve(ilustraciones[simbolo]);
+    return cargarImagen("cartas/" + simbolo + ".webp").then(function (img) { return (ilustraciones[simbolo] = img ? "cartas/" + simbolo + ".webp" : null); });
+  }
+
+  function exportable(c) { try { c.toDataURL("image/png"); return true; } catch (e) { return false; } }
+  // Con file:// el navegador no deja bajar un canvas que tiene imágenes de la carpeta:
+  // en ese caso la imagen para historias se arma con los dibujos.
+  function imagenHistorias(d) {
+    return dibujar(d).then(function (c) {
+      if (exportable(c)) return c;
+      d.cartas.forEach(function (carta) { carta.imagenCanvas = null; });
+      return dibujar(d);
+    });
+  }
+
+  function mostrar(t) {
+    var orden = ["pasado", "presente", "futuro"];
+    var cartas = (Array.isArray(t.cartas) ? t.cartas : []).filter(Boolean).slice(0, 3).map(function (c, i) {
+      var pos = texto(c.posicion).toLowerCase(), numero = texto(c.numero), nombre = texto(c.nombre);
+      return {
+        posicion: POSICIONES[pos] ? pos : orden[i], numero: numero, nombre: nombre || "Carta sin nombre",
+        simbolo: nombreSimbolo(texto(c.simbolo), numero, nombre), invertida: c.invertida === true || c.invertida === "true",
+        lectura: texto(c.lectura), prueba: texto(c.prueba)
+      };
+    });
+    var d = {
+      fecha: texto(t.fecha), cuenta: texto(t.cuenta), red: texto(t.red),
+      seguidores: numeroONulo(t.seguidores), publicaciones: numeroONulo(t.publicaciones),
+      cartas: cartas, profecia: texto(t.profecia), pasos: lista(t.pasos)
+    };
+    actual = d;
+
+    var consulta = document.getElementById("consulta"), b = document.createElement("b"), span = document.createElement("span");
+    consulta.textContent = "";
+    b.textContent = "Consulta de " + (d.cuenta || "tu cuenta");
+    consulta.appendChild(b);
+    span.textContent = [d.red].concat(cifras(d), [fechaLinda(d.fecha)]).filter(Boolean).map(function (x) { return x.replace(/ /g, DURO); }).join(" · ");
+    if (span.textContent) consulta.appendChild(span);
+    consulta.hidden = false;
+
+    var lecturas = document.getElementById("lecturas");
+    lecturas.textContent = "";
+    cartas.forEach(function (c) { lecturas.appendChild(nuevaLectura(c)); });
+    document.getElementById("bloque-lecturas").hidden = !cartas.length;
+    document.getElementById("profecia").textContent = d.profecia;
+    document.getElementById("bloque-profecia").hidden = !d.profecia;
+    var ol = document.getElementById("pasos");
+    ol.textContent = "";
+    d.pasos.forEach(function (p) { var li = document.createElement("li"); li.textContent = p; ol.appendChild(li); });
+    document.getElementById("bloque-pasos").hidden = !d.pasos.length;
+
+    fuentesListas().then(function () {
+      var tirada = document.getElementById("tirada");
+      tirada.textContent = "";
+      var mazo = document.createElement("div");
+      mazo.className = "mesa-mazo"; mazo.setAttribute("aria-hidden", "true");
+      mazo.innerHTML = "<div>" + SVG_DORSO + "</div><div>" + SVG_DORSO + "</div><div>" + SVG_DORSO + "</div>";
+      tirada.appendChild(mazo);
+      cartas.forEach(function (c, i) { tirada.appendChild(nuevaCarta(c, i)); });
+      tirada.hidden = !cartas.length;
+      document.getElementById("bloque-otra-vez").hidden = !cartas.length;
+      tirar(!quieto);
+      return Promise.all(cartas.map(function (c) { return buscarIlustracion(c.simbolo); }));
+    }).then(function (urls) {
+      // Las cartas con ilustración propia: la página la muestra y la imagen intenta usarla.
+      var frentes = document.querySelectorAll("#tirada .frente");
+      cartas.forEach(function (c, i) {
+        if (!urls[i]) return;
+        c.imagenCanvas = urls[i];
+        if (frentes[i]) frentes[i].innerHTML = svgCarta(c, { imagen: urls[i] });
+      });
+      return imagenHistorias(d);
+    }).then(function (c) {
+      d.canvas = c;
+      var img = document.getElementById("imagen");
+      img.src = c.toDataURL("image/png");
+      img.alt = "La tirada de " + (d.cuenta || "tu cuenta") + ": " + cartas.map(function (c) {
+        return POSICIONES[c.posicion].titulo + ", " + c.nombre + (c.invertida ? " invertida" : "");
+      }).join("; ") + ". " + d.profecia;
+      document.getElementById("bloque-imagen").hidden = false;
+    });
+  }
+
+  function bajar(canvas, nombre, titulo) {
+    canvas.toBlob(function (blob) {
+      var archivo = new File([blob], nombre, { type: "image/png" });
+      // En el celular, compartir abre la hoja para guardarla o subirla a historias.
+      if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+        navigator.share({ files: [archivo], title: titulo }).catch(function () {});
+        return;
+      }
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = nombre;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    }, "image/png");
+  }
+
+  document.getElementById("bajar").addEventListener("click", function () {
+    if (!actual || !actual.canvas) return;
+    var c = (actual.cuenta || "tu-cuenta").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]+/g, "-").slice(0, 40).replace(/^-|-$/g, "");
+    bajar(actual.canvas, "tarot-" + c + ".png", "El tarot del algoritmo");
+  });
+  document.getElementById("otra-vez").addEventListener("click", function () {
+    document.getElementById("tirada").scrollIntoView({ behavior: quieto ? "auto" : "smooth", block: "center" });
+    tirar(!quieto);
+  });
+  window.addEventListener("resize", function () { if (!document.getElementById("tirada").classList.contains("repartido")) medirMazo(); });
+
+  // ---------- El mazo completo (index.html#mazo) ----------
+  function mostrarMazo() {
+    var mazo = document.getElementById("mazo");
+    document.getElementById("titulo-mazo").textContent = "Los " + MAZO.length + " arcanos del algoritmo";
+    fuentesListas().then(function () {
+      function figura(html, rotulo) {
+        var f = document.createElement("figure"), cara = document.createElement("div"), cap = document.createElement("figcaption");
+        cara.className = "cara"; cara.innerHTML = html; cap.textContent = rotulo;
+        f.appendChild(cara); f.appendChild(cap); mazo.appendChild(f);
+        return f;
+      }
+      figura(SVG_DORSO, "El dorso").id = "dorso-muestra";
+      MAZO.forEach(function (a) { figura(svgCarta({ numero: a.numero, nombre: a.nombre, simbolo: a.simbolo }), a.simbolo); });
+      document.getElementById("bloque-mazo").hidden = false;
+      return dibujarHoja();
+    }).then(function (c) {
+      document.getElementById("hoja").src = c.toDataURL("image/png");
+      document.getElementById("bajar-hoja").onclick = function () { bajar(c, "tarot-mazo.png", "Los arcanos del algoritmo"); };
+    });
+  }
+
+  // ---------- Los datos: datos.js, o el ejemplo si todavía no hay ----------
+  function cargar(src, listo) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.onload = function () { listo(true); };
+    s.onerror = function () { listo(false); };
+    document.head.appendChild(s);
+  }
+  // El aviso del ejemplo, con los tres pasos para tener la tirada propia.
+  function avisar(motivo) {
+    var caja = document.getElementById("aviso-ejemplo"), p = document.createElement("p"), ol = document.createElement("ol");
+    function codigo() { var c = document.createElement("code"); c.textContent = COMANDO; return c; }
+    function fuerte(t) { var b = document.createElement("b"); b.textContent = t; return b; }
+    caja.textContent = "";
+    p.appendChild(document.createTextNode(motivo === "roto" ? "No pude leer datos.js. Esto es un ejemplo. Escribe " : "Esto es un ejemplo. Escribe "));
+    p.appendChild(codigo());
+    p.appendChild(document.createTextNode(" en Claude Code para ver el tuyo:"));
+    [
+      ["Abre la carpeta ", fuerte("apps-super-locas"), " en Claude Code."],
+      ["Escribe ", codigo(), " y pega la captura de tu perfil."],
+      ["Esta página se abre sola con tus cartas."]
+    ].forEach(function (partes) {
+      var li = document.createElement("li");
+      partes.forEach(function (x) { li.appendChild(typeof x === "string" ? document.createTextNode(x) : x); });
+      ol.appendChild(li);
+    });
+    caja.appendChild(p); caja.appendChild(ol);
+    caja.hidden = false;
+  }
+  if (location.hash === "#mazo") { mostrarMazo(); return; }
+  cargar("datos.js", function (hay) {
+    if (hay && window.TAROT) { mostrar(window.TAROT); return; }
+    var motivo = hay ? "roto" : "falta";
+    window.TAROT = undefined;
+    cargar("ejemplo.js", function (ok) {
+      if (ok && window.TAROT) { avisar(motivo); mostrar(window.TAROT); return; }
+      var e = document.getElementById("error");
+      e.textContent = "No encontré la tirada. Escribe " + COMANDO + " en Claude Code y vuelve a abrir esta página.";
+      e.hidden = false;
+    });
+  });
+})();
+</script>
+</body>
+</html>

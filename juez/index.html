@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Juez de ideas tontas</title>
+<meta name="description" content="La sentencia de tu idea de negocio, con la competencia y los precios de verdad.">
+<meta name="theme-color" content="#0b1e5b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,500&display=swap">
+<style>
+/* Una sola columna para el celular. La sentencia se dibuja en un canvas de
+   1080x1920 y es la misma imagen que se ve y la que se baja para historias.
+   El resultado sale de datos.js, que escribe /juez; si no está, ejemplo.js. */
+:root {
+  --fondo-1: #0b1e5b;
+  --fondo-2: #2563eb;
+  --tinta: #0b1e5b;
+  --tinta-suave: #4a5f9c;
+  --lila: #c7d7ff;
+  --panel: #f2f6ff;
+  --rosa: #ff2e88;
+  --rosa-oscuro: #c8125f;
+  --rojo: #e11d48;
+  --verde: #16a34a;
+  --amarillo: #ffd23f;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  background: linear-gradient(180deg, var(--fondo-1), var(--fondo-2)) fixed;
+  color: #fff;
+  font: 500 16px/1.5 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+main {
+  max-width: 440px; margin: 0 auto;
+  padding: 36px max(18px, env(safe-area-inset-left)) 48px max(18px, env(safe-area-inset-right));
+  display: grid; gap: 22px;
+}
+[hidden] { display: none !important; }
+.serie { font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lila); margin: 0; }
+h1 { font: 900 clamp(2.5rem, 12vw, 3.3rem)/0.95 "Fraunces", Georgia, serif; margin: 0; letter-spacing: -0.02em; }
+.bajada { margin: 0; color: var(--lila); font-size: 1.08rem; }
+.aviso-ejemplo {
+  margin: 0; background: var(--amarillo); color: var(--tinta);
+  font-weight: 700; border-radius: 16px; padding: 12px 16px;
+}
+.aviso-ejemplo code { font: 800 1em "Bricolage Grotesque", system-ui, sans-serif; background: rgba(11, 30, 91, 0.12); padding: 1px 6px; border-radius: 6px; }
+.resultado, .panel {
+  background: var(--panel); color: var(--tinta);
+  border-radius: 22px; padding: 20px;
+  display: grid; gap: 14px;
+  box-shadow: 0 18px 40px rgba(0, 10, 50, 0.35);
+}
+.resultado img { width: 100%; height: auto; border-radius: 16px; display: block; background: var(--fondo-1); }
+button {
+  font: 800 1.05rem "Bricolage Grotesque", system-ui, sans-serif;
+  border: 0; border-radius: 999px; padding: 15px 22px; min-height: 52px; cursor: pointer;
+  background: var(--rosa); color: #fff;
+}
+button:active { transform: translateY(1px); }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--rosa); outline-offset: 3px; }
+.panel h2 { margin: 0; font: 800 0.8rem/1.2 "Bricolage Grotesque", system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rosa-oscuro); }
+.panel p { margin: 0; }
+.acusada { font: 700 1.5rem/1.2 "Fraunces", Georgia, serif; }
+.meta { color: var(--tinta-suave); font-weight: 700; font-size: 0.95rem; }
+.lista { margin: 0; padding-left: 1.3em; display: grid; gap: 10px; }
+.cargos li::marker { color: var(--rojo); font-weight: 800; }
+.atenuantes li::marker { color: var(--verde); }
+.competencia { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.competencia li { background: #fff; border-radius: 14px; padding: 12px 14px; border: 2px solid #d5e0fb; display: grid; gap: 2px; }
+.competencia .nombre { font-weight: 800; color: var(--tinta); }
+.competencia a.nombre { text-decoration: underline; text-underline-offset: 3px; }
+.competencia .precio { font-weight: 600; }
+.competencia .sitio { font-size: 0.82rem; color: var(--tinta-suave); overflow-wrap: anywhere; }
+.vacio { color: var(--tinta-suave); font-weight: 600; }
+.fallo { justify-self: start; font: 900 1.5rem/1.1 "Fraunces", Georgia, serif; border: 4px solid currentColor; border-radius: 12px; padding: 6px 14px; transform: rotate(-2deg); background: #fff; }
+.condena { font: italic 500 1.2rem/1.35 "Fraunces", Georgia, serif; }
+.pasos { margin: 0; padding-left: 1.4em; display: grid; gap: 10px; font-weight: 600; }
+.pasos li::marker { font-weight: 800; color: var(--rosa); }
+.error { margin: 0; background: #fff; color: var(--rosa-oscuro); font-weight: 700; border-radius: 16px; padding: 14px 16px; }
+footer { text-align: center; color: var(--lila); font-size: 0.9rem; }
+footer a { color: #fff; font-weight: 800; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="serie">Apps súper locas · Día 3</p>
+    <h1>Juez de ideas tontas</h1>
+    <p class="bajada">Tu idea de negocio, juzgada con la competencia y los precios de verdad.</p>
+  </header>
+
+  <p class="aviso-ejemplo" id="aviso-ejemplo" hidden></p>
+  <p class="error" id="error" role="alert" hidden></p>
+
+  <section class="resultado" id="resultado" hidden aria-live="polite">
+    <img id="sentencia" alt="">
+    <button type="button" id="bajar">Bajar para historias</button>
+  </section>
+
+  <section class="panel" id="bloque-caso" hidden>
+    <h2>La acusada</h2>
+    <p class="acusada" id="acusada"></p>
+    <p class="meta" id="meta"></p>
+  </section>
+
+  <section class="panel" id="bloque-cargos" hidden>
+    <h2>Cargos</h2>
+    <ol class="lista cargos" id="cargos"></ol>
+    <p class="vacio" id="sin-cargos" hidden>Ninguno. El juez no lo puede creer.</p>
+  </section>
+
+  <section class="panel" id="bloque-competencia" hidden>
+    <h2>La competencia</h2>
+    <ul class="competencia" id="competencia"></ul>
+  </section>
+
+  <section class="panel" id="bloque-atenuantes" hidden>
+    <h2>Atenuantes</h2>
+    <ul class="lista atenuantes" id="atenuantes"></ul>
+    <p class="vacio" id="sin-atenuantes" hidden>Ninguno.</p>
+  </section>
+
+  <section class="panel" id="bloque-fallo" hidden>
+    <h2>El fallo</h2>
+    <p class="fallo" id="fallo"></p>
+    <p class="condena" id="condena"></p>
+  </section>
+
+  <section class="panel" id="bloque-pasos" hidden>
+    <h2>Cómo salir en libertad</h2>
+    <ol class="pasos" id="pasos"></ol>
+  </section>
+
+  <footer>Hecha con Claude Code por alguien que no sabe programar · <a href="https://www.instagram.com/crece_de_cero/">@crece_de_cero</a></footer>
+</main>
+
+<script>
+(function () {
+  var COMANDO = "/juez";
+  var COLORES = { "ABSUELTA": "#16a34a", "LIBERTAD CONDICIONAL": "#ea580c", "CULPABLE": "#e11d48", "CADENA PERPETUA": "#be123c" };
+
+  function texto(v) { return v === null || v === undefined ? "" : String(v).trim(); }
+  function lista(v) { return Array.isArray(v) ? v.map(texto).filter(Boolean) : []; }
+  function fechaLinda(f) {
+    var t = texto(f), m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t);
+    return m ? (+m[3]) + "/" + (+m[2]) + "/" + m[1] : t;
+  }
+  // Solo links web: lo que no empiece con http(s) queda como texto.
+  function linkSeguro(l) {
+    var t = texto(l);
+    try { var u = new URL(t); return u.protocol === "https:" || u.protocol === "http:" ? u : null; } catch (e) { return null; }
+  }
+
+  // ---------- La sentencia para historias ----------
+  function renglones(ctx, contenido, ancho, max) {
+    // Un número nunca queda separado de su «%»: el espacio entre los dos no corta el renglón.
+    var palabras = contenido.replace(/(\d) %/g, "$1" + String.fromCharCode(160) + "%").split(/[ \t\n\r\f\v]+/), lineas = [], linea = "";
+    for (var i = 0; i < palabras.length; i++) {
+      var prueba = linea ? linea + " " + palabras[i] : palabras[i];
+      if (ctx.measureText(prueba).width > ancho && linea) { lineas.push(linea); linea = palabras[i]; }
+      else linea = prueba;
+    }
+    if (linea) lineas.push(linea);
+    if (lineas.length > max) {
+      lineas = lineas.slice(0, max);
+      // El «…» va después de una palabra entera, no en el medio de una.
+      var ultima = lineas[max - 1];
+      while (ctx.measureText(ultima + "…").width > ancho && /\s/.test(ultima)) ultima = ultima.replace(/\s+\S+$/, "");
+      while (ctx.measureText(ultima + "…").width > ancho && ultima.length) ultima = ultima.slice(0, -1);
+      lineas[max - 1] = ultima.replace(/[\s,;:]+$/, "") + "…";
+    }
+    return lineas;
+  }
+
+  function martillo(ctx, x, y) {
+    ctx.save();
+    ctx.translate(x, y); ctx.rotate(-0.55);
+    ctx.fillStyle = "#a0672f";
+    ctx.beginPath(); ctx.roundRect(-6, -9, 150, 18, 8); ctx.fill();
+    ctx.fillStyle = "#6b3f1d";
+    ctx.beginPath(); ctx.roundRect(-46, -52, 74, 104, 14); ctx.fill();
+    ctx.fillStyle = "#d39a5a";
+    ctx.fillRect(-46, -30, 74, 10); ctx.fillRect(-46, 20, 74, 10);
+    ctx.restore();
+    ctx.fillStyle = "#6b3f1d";
+    ctx.beginPath(); ctx.roundRect(x - 40, y + 86, 130, 26, 9); ctx.fill();
+  }
+
+  function sello(ctx, nombre, color, cx, cy) {
+    ctx.save();
+    ctx.translate(cx, cy); ctx.rotate(-0.08);
+    var tam = 116;
+    ctx.font = '900 ' + tam + 'px "Fraunces"';
+    var w = ctx.measureText(nombre).width;
+    if (w > 720) { tam = Math.floor(tam * 720 / w); ctx.font = '900 ' + tam + 'px "Fraunces"'; w = ctx.measureText(nombre).width; }
+    var bw = w + 100, bh = tam + 80;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.96)";
+    ctx.beginPath(); ctx.roundRect(-bw / 2, -bh / 2, bw, bh, 20); ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 11;
+    ctx.beginPath(); ctx.roundRect(-bw / 2, -bh / 2, bw, bh, 20); ctx.stroke();
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.roundRect(-bw / 2 + 16, -bh / 2 + 16, bw - 32, bh - 32, 12); ctx.stroke();
+    ctx.fillStyle = color; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(nombre, 0, tam * 0.06);
+    ctx.restore();
+  }
+
+  // Lo que va en la hoja, ya cortado en renglones. Si no entra, se achica.
+  function contenido(ctx, d, conf) {
+    var ANCHO = 740, b = [];
+    function bloque(fuente, lineas, alto, color, antes, extra) {
+      var x = { fuente: fuente, lineas: lineas, alto: alto, color: color, antes: antes };
+      for (var k in extra) x[k] = extra[k];
+      b.push(x);
+    }
+    function etiqueta(t, color) { bloque('800 28px "Bricolage Grotesque"', [t], 38, color, 20); }
+    function items(lista, max, vacio, color, cual) {
+      var fuente = '600 ' + conf.tam + 'px "Bricolage Grotesque"', alto = Math.round(conf.tam * 1.28);
+      ctx.font = fuente;
+      if (!lista.length) { bloque(fuente, renglones(ctx, vacio, ANCHO, 2), alto, "#4a5f9c", 10); return; }
+      lista.slice(0, max).forEach(function (t) {
+        bloque(fuente, renglones(ctx, t, ANCHO - 44, conf.lineas), alto, "#0b1e5b", 10, { vineta: color });
+      });
+      if (cual && lista.length > max) {
+        var resto = lista.length - max;
+        bloque(fuente, ["Y " + resto + " " + cual + (resto === 1 ? "" : "s") + " más."], alto, "#4a5f9c", 10);
+      }
+    }
+    bloque('900 88px "Fraunces"', ["SENTENCIA"], 92, "#0b1e5b", 0);
+    etiqueta("LA ACUSADA", "#c8125f");
+    ctx.font = '700 46px "Fraunces"';
+    bloque('700 46px "Fraunces"', renglones(ctx, "«" + d.acusada + "»", ANCHO, conf.acusada), 56, "#0b1e5b", 6);
+    b.push({ raya: true, alto: 4, antes: 20 });
+    etiqueta("CARGOS", "#e11d48");
+    items(d.cargos, conf.cargos, "Ninguno. El juez no lo puede creer.", "#e11d48", "cargo");
+    etiqueta("LA COMPETENCIA", "#2563eb");
+    items(d.pruebas.map(function (p) { return p.precio ? p.nombre + ": " + p.precio : p.nombre; }), conf.pruebas, "No encontré a nadie haciendo lo mismo.", "#2563eb", "");
+    etiqueta("ATENUANTE", "#16a34a");
+    items(d.atenuantes, 1, "Ninguno.", "#16a34a", "");
+    return b;
+  }
+  function altoTotal(b) {
+    return b.reduce(function (s, p) { return s + p.antes + (p.raya ? p.alto : p.lineas.length * p.alto); }, 0);
+  }
+
+  function dibujar(d) {
+    var c = document.createElement("canvas");
+    c.width = 1080; c.height = 1920;
+    var ctx = c.getContext("2d");
+
+    var fondo = ctx.createLinearGradient(0, 0, 0, 1920);
+    fondo.addColorStop(0, "#0b1e5b"); fondo.addColorStop(1, "#2563eb");
+    ctx.fillStyle = fondo; ctx.fillRect(0, 0, 1080, 1920);
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#c7d7ff";
+    ctx.font = '800 40px "Bricolage Grotesque"';
+    ctx.fillText("JUZGADO DE IDEAS TONTAS", 540, 128);
+    ctx.font = '600 32px "Bricolage Grotesque"';
+    ctx.fillText([d.expediente ? "Expediente N.º " + d.expediente : "", fechaLinda(d.fecha)].filter(Boolean).join(" · "), 540, 176);
+
+    // La hoja, con su sombra y una franja rosa arriba.
+    var X = 90, Y = 220, W = 900, H = 1260;
+    ctx.fillStyle = "rgba(3, 10, 40, 0.35)";
+    ctx.beginPath(); ctx.roundRect(X + 12, Y + 18, W, H, 30); ctx.fill();
+    ctx.fillStyle = "#fffdf7";
+    ctx.beginPath(); ctx.roundRect(X, Y, W, H, 30); ctx.fill();
+    ctx.fillStyle = "#ff2e88";
+    ctx.beginPath(); ctx.roundRect(X, Y, W, 20, [30, 30, 0, 0]); ctx.fill();
+
+    // Entra todo lo que se pueda, de lo más holgado a lo más apretado. Lo que sobra
+    // de alto va un tercio arriba y el resto abajo (el sello tapa el pie de la hoja).
+    // Antes de sacar cargos o competidores se achica la letra.
+    var libre = H - 90 - 150, confs = [
+      { tam: 36, lineas: 3, acusada: 3, cargos: 3, pruebas: 3 }, { tam: 34, lineas: 2, acusada: 3, cargos: 3, pruebas: 3 },
+      { tam: 32, lineas: 2, acusada: 3, cargos: 3, pruebas: 3 }, { tam: 32, lineas: 2, acusada: 2, cargos: 3, pruebas: 3 },
+      { tam: 30, lineas: 2, acusada: 2, cargos: 3, pruebas: 3 }, { tam: 28, lineas: 2, acusada: 2, cargos: 3, pruebas: 3 },
+      { tam: 28, lineas: 2, acusada: 2, cargos: 3, pruebas: 2 }, { tam: 28, lineas: 2, acusada: 2, cargos: 2, pruebas: 2 }
+    ], partes;
+    for (var k = 0; k < confs.length; k++) {
+      partes = contenido(ctx, d, confs[k]);
+      if (altoTotal(partes) <= libre) break;
+    }
+    var y = Y + 70 + Math.max(0, (libre - altoTotal(partes)) * 0.3);
+    martillo(ctx, X + W - 150, y + 50);
+    ctx.textAlign = "left";
+    partes.forEach(function (p) {
+      y += p.antes;
+      if (p.raya) { ctx.fillStyle = "#cbd8fb"; ctx.fillRect(X + 70, y, 760, p.alto); y += p.alto; return; }
+      ctx.font = p.fuente;
+      var x = X + 70;
+      if (p.vineta) {
+        ctx.fillStyle = p.vineta;
+        ctx.beginPath(); ctx.arc(x + 12, y + p.alto * 0.5, 9, 0, Math.PI * 2); ctx.fill();
+        x += 44;
+      }
+      ctx.fillStyle = p.color;
+      p.lineas.forEach(function (l) { ctx.fillText(l, x, y + p.alto * 0.76); y += p.alto; });
+    });
+
+    sello(ctx, d.fallo, d.color, 540, Y + H - 30);
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffffff";
+    ctx.font = 'italic 500 44px "Fraunces"';
+    renglones(ctx, d.condena, 920, 2).forEach(function (l, i) { ctx.fillText(l, 540, 1640 + i * 56); });
+
+    ctx.font = '800 54px "Bricolage Grotesque"';
+    ctx.fillText("@crece_de_cero", 540, 1790);
+    ctx.fillStyle = "#c7d7ff";
+    ctx.font = '600 32px "Bricolage Grotesque"';
+    ctx.fillText("Apps súper locas · Día 3", 540, 1846);
+    return c;
+  }
+
+  function fuentesListas() {
+    if (!document.fonts || !document.fonts.load) return Promise.resolve();
+    return Promise.all([
+      document.fonts.load('900 116px "Fraunces"'),
+      document.fonts.load('700 46px "Fraunces"'),
+      document.fonts.load('italic 500 44px "Fraunces"'),
+      document.fonts.load('800 40px "Bricolage Grotesque"'),
+      document.fonts.load('600 36px "Bricolage Grotesque"')
+    ]).catch(function () {});
+  }
+
+  // ---------- La página ----------
+  var actual = null;
+
+  function llenarLista(el, items) {
+    el.textContent = "";
+    items.forEach(function (t) { var li = document.createElement("li"); li.textContent = t; el.appendChild(li); });
+  }
+
+  function mostrar(s) {
+    var fallo = texto(s.fallo).toUpperCase() || "CULPABLE";
+    var d = {
+      expediente: texto(s.expediente).replace(/^expediente\s*(n\.?\s*º?\s*)?/i, ""), fecha: texto(s.fecha),
+      acusada: texto(s.acusada) || "Una idea sin nombre",
+      cargos: lista(s.cargos), atenuantes: lista(s.atenuantes), pasos: lista(s.pasos),
+      pruebas: (Array.isArray(s.pruebas) ? s.pruebas : []).filter(function (p) { return p && texto(p.nombre); })
+        .map(function (p) { return { nombre: texto(p.nombre), precio: texto(p.precio), link: texto(p.link) }; }),
+      fallo: fallo, color: COLORES[fallo] || "#e11d48", condena: texto(s.condena)
+    };
+    actual = d;
+
+    document.getElementById("acusada").textContent = "«" + d.acusada + "»";
+    document.getElementById("meta").textContent = [d.expediente ? "Expediente N.º " + d.expediente : "", fechaLinda(d.fecha)].filter(Boolean).join(" · ");
+    document.getElementById("bloque-caso").hidden = false;
+
+    llenarLista(document.getElementById("cargos"), d.cargos);
+    document.getElementById("cargos").hidden = !d.cargos.length;
+    document.getElementById("sin-cargos").hidden = !!d.cargos.length;
+    document.getElementById("bloque-cargos").hidden = false;
+
+    var ul = document.getElementById("competencia");
+    ul.textContent = "";
+    d.pruebas.forEach(function (p) {
+      var li = document.createElement("li"), u = linkSeguro(p.link), nombre;
+      if (u) {
+        nombre = document.createElement("a");
+        nombre.href = u.href; nombre.target = "_blank"; nombre.rel = "noopener noreferrer";
+      } else nombre = document.createElement("span");
+      nombre.className = "nombre"; nombre.textContent = p.nombre;
+      li.appendChild(nombre);
+      if (p.precio) { var precio = document.createElement("span"); precio.className = "precio"; precio.textContent = p.precio; li.appendChild(precio); }
+      if (u) { var sitio = document.createElement("span"); sitio.className = "sitio"; sitio.textContent = u.hostname.replace(/^www\./, ""); li.appendChild(sitio); }
+      ul.appendChild(li);
+    });
+    document.getElementById("bloque-competencia").hidden = !d.pruebas.length;
+
+    llenarLista(document.getElementById("atenuantes"), d.atenuantes);
+    document.getElementById("atenuantes").hidden = !d.atenuantes.length;
+    document.getElementById("sin-atenuantes").hidden = !!d.atenuantes.length;
+    document.getElementById("bloque-atenuantes").hidden = false;
+
+    var f = document.getElementById("fallo");
+    f.textContent = d.fallo; f.style.color = d.color;
+    document.getElementById("condena").textContent = d.condena;
+    document.getElementById("bloque-fallo").hidden = false;
+
+    llenarLista(document.getElementById("pasos"), d.pasos);
+    document.getElementById("bloque-pasos").hidden = !d.pasos.length;
+
+    fuentesListas().then(function () {
+      var c = dibujar(d);
+      d.canvas = c;
+      var img = document.getElementById("sentencia");
+      img.src = c.toDataURL("image/png");
+      img.alt = "Sentencia para «" + d.acusada + "»: " + d.fallo + ". " + d.condena;
+      document.getElementById("resultado").hidden = false;
+    });
+  }
+
+  document.getElementById("bajar").addEventListener("click", function () {
+    if (!actual || !actual.canvas) return;
+    var nombre = "sentencia-" + actual.acusada.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]+/g, "-").slice(0, 40).replace(/^-|-$/g, "") + ".png";
+    actual.canvas.toBlob(function (blob) {
+      var archivo = new File([blob], nombre, { type: "image/png" });
+      // En el celular, compartir abre la hoja para guardarla o subirla a historias.
+      if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+        navigator.share({ files: [archivo], title: "Juez de ideas tontas" }).catch(function () {});
+        return;
+      }
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = nombre;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    }, "image/png");
+  });
+
+  // ---------- Los datos: datos.js, o el ejemplo si todavía no hay ----------
+  function cargar(src, listo) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.onload = function () { listo(true); };
+    s.onerror = function () { listo(false); };
+    document.head.appendChild(s);
+  }
+  function avisar(motivo) {
+    var p = document.getElementById("aviso-ejemplo"), code = document.createElement("code");
+    code.textContent = COMANDO;
+    p.textContent = motivo === "roto" ? "No pude leer datos.js. Esto es un ejemplo. Escribe " : "Esto es un ejemplo. Escribe ";
+    p.appendChild(code);
+    p.appendChild(document.createTextNode(" en Claude Code para ver el tuyo."));
+    p.hidden = false;
+  }
+  cargar("datos.js", function (hay) {
+    if (hay && window.SENTENCIA) { mostrar(window.SENTENCIA); return; }
+    var motivo = hay ? "roto" : "falta";
+    window.SENTENCIA = undefined;
+    cargar("ejemplo.js", function (ok) {
+      if (ok && window.SENTENCIA) { avisar(motivo); mostrar(window.SENTENCIA); return; }
+      var e = document.getElementById("error");
+      e.textContent = "No encontré el resultado. Escribe " + COMANDO + " en Claude Code y vuelve a abrir esta página.";
+      e.hidden = false;
+    });
+  });
+})();
+</script>
+</body>
+</html>

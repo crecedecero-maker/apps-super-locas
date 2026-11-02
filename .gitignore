@@ -1,0 +1,11 @@
+# Lo que genera cada app queda solo en tu compu
+expedientes/*
+!expedientes/.gitkeep
+lecturas/*
+!lecturas/.gitkeep
+velorios/*
+!velorios/.gitkeep
+juez/datos.js
+tarot/datos.js
+velorio/datos.js
+.claude/settings.local.json

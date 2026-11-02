@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch",
+      "Bash(ffmpeg:*)",
+      "Bash(ffprobe:*)",
+      "Bash(mkdir:*)",
+      "Bash(yt-dlp:*)",
+      "Edit(./expedientes/**)",
+      "Edit(./lecturas/**)",
+      "Edit(./velorios/**)",
+      "Edit(./juez/datos.js)",
+      "Edit(./tarot/datos.js)",
+      "Edit(./velorio/datos.js)"
+    ]
+  }
+}
