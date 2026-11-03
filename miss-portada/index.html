@@ -1,0 +1,951 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Miss Portada</title>
+<meta name="description" content="Un concurso de belleza con las portadas de tu perfil: eliminadas, Miss Simpatía y la corona.">
+<meta name="theme-color" content="#4c0d6b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,500;1,9..144,900&display=swap">
+<style>
+/* Una sola columna para el celular. El escenario es un canvas de 1080x1920: se anima
+   una vez (la coronación) y queda quieto en la imagen que se baja para historias.
+   El resultado sale de datos.js y fotos.js, que escribe /miss-portada; si no están,
+   de ejemplo.js y ejemplo-fotos.js. */
+:root {
+  --violeta: #4c0d6b;
+  --violeta-oscuro: #1f0a3d;
+  --rosa: #ff2e88;
+  --turquesa: #22d3ee;
+  --amarillo: #ffd23f;
+  --rojo: #ff3b5c;
+  --papel: #fff5fb;
+  --tinta: #1a0726;
+  --tinta-suave: #6b4b78;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  background: var(--violeta);
+  color: #fff;
+  font: 500 16px/1.5 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+main {
+  max-width: 440px; margin: 0 auto;
+  padding: 36px max(18px, env(safe-area-inset-left)) 48px max(18px, env(safe-area-inset-right));
+  display: grid; gap: 22px;
+}
+[hidden] { display: none !important; }
+.serie { font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--amarillo); margin: 0; font-weight: 800; }
+h1 { font: italic 900 clamp(2.6rem, 13vw, 3.4rem)/0.95 "Fraunces", Georgia, serif; margin: 0; letter-spacing: -0.02em; }
+.bajada { margin: 0; font-size: 1.08rem; font-weight: 600; }
+.aviso-ejemplo {
+  margin: 0; background: var(--amarillo); color: var(--tinta);
+  font-weight: 700; border-radius: 16px; padding: 12px 16px;
+}
+.aviso-ejemplo code { font: 800 1em "Bricolage Grotesque", system-ui, sans-serif; background: rgba(26, 7, 38, 0.1); padding: 1px 6px; border-radius: 6px; }
+.escenario { display: grid; gap: 12px; }
+.escenario canvas {
+  width: 100%; height: auto; display: block; aspect-ratio: 9 / 16;
+  border-radius: 22px; background: var(--violeta-oscuro);
+  box-shadow: 0 18px 40px rgba(20, 0, 40, 0.5);
+}
+.botones { display: grid; gap: 10px; }
+button {
+  font: 800 1.05rem "Bricolage Grotesque", system-ui, sans-serif;
+  border: 0; border-radius: 999px; padding: 15px 22px; min-height: 52px; cursor: pointer;
+  background: var(--rosa); color: #fff;
+}
+button.secundario { background: transparent; color: #fff; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6); }
+button:active { transform: translateY(1px); }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--amarillo); outline-offset: 3px; }
+.panel {
+  background: var(--papel); color: var(--tinta);
+  border-radius: 22px; padding: 20px;
+  display: grid; gap: 14px;
+  box-shadow: 0 18px 40px rgba(20, 0, 40, 0.35);
+}
+.panel h2 { margin: 0; font: 800 0.8rem/1.2 "Bricolage Grotesque", system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: #a3127a; }
+.panel p { margin: 0; }
+.veredicto { font: italic 900 1.45rem/1.2 "Fraunces", Georgia, serif; }
+.meta { color: var(--tinta-suave); font-weight: 700; font-size: 0.95rem; }
+.ficha { display: grid; grid-template-columns: 92px 1fr; gap: 14px; align-items: start; }
+.ficha h3 { margin: 0 0 4px; font: 900 1.15rem/1.15 "Fraunces", Georgia, serif; }
+.ficha p { margin: 0 0 6px; }
+.etiqueta { display: inline-block; font-weight: 800; font-size: 0.82rem; border-radius: 999px; padding: 2px 10px; margin: 0 6px 6px 0; }
+.etiqueta.vistas { background: var(--amarillo); color: var(--tinta); }
+.etiqueta.doble { background: var(--turquesa); color: var(--tinta); }
+.arreglo { color: var(--tinta-suave); font-size: 0.95rem; }
+.arreglo strong { color: var(--tinta); }
+.lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.mini {
+  width: 100%; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden;
+  background: #2a0a3d; box-shadow: 0 0 0 3px #fff, 0 6px 14px rgba(40, 0, 60, 0.25);
+}
+.mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mini.sin-foto {
+  display: grid; place-items: center; text-align: center; padding: 8px;
+  font: 800 0.72rem/1.1 "Bricolage Grotesque", system-ui, sans-serif; text-transform: uppercase; overflow-wrap: anywhere;
+}
+.receta { margin: 0; padding-left: 1.4em; display: grid; gap: 10px; font-weight: 600; }
+.receta li::marker { font-weight: 800; color: var(--rosa); }
+.todas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 12px; }
+.todas figure { margin: 0; display: grid; gap: 6px; position: relative; }
+.todas figcaption { font-size: 0.8rem; line-height: 1.25; font-weight: 700; }
+.todas figcaption span { display: block; color: var(--tinta-suave); font-weight: 600; }
+.todas .premio {
+  position: absolute; top: -8px; right: -6px; font-size: 0.7rem; font-weight: 800;
+  border-radius: 999px; padding: 2px 8px; background: var(--amarillo); color: var(--tinta);
+}
+.todas .premio.simpatia { background: var(--turquesa); }
+.todas .premio.fuera { background: var(--rojo); color: #fff; }
+.todas .eliminada .mini { filter: grayscale(1); opacity: 0.75; }
+.vacio { color: var(--tinta-suave); font-weight: 600; }
+.error { margin: 0; background: #fff; color: #a3127a; font-weight: 700; border-radius: 16px; padding: 14px 16px; }
+footer { text-align: center; color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; }
+footer a { color: #fff; font-weight: 800; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="serie">Apps súper locas · Día 5</p>
+    <h1>Miss Portada</h1>
+    <p class="bajada">Un concurso de belleza con las portadas de tu perfil.</p>
+  </header>
+
+  <p class="aviso-ejemplo" id="aviso-ejemplo" hidden></p>
+  <p class="error" id="error" role="alert" hidden></p>
+
+  <section class="escenario" id="escenario" hidden>
+    <canvas id="lienzo" width="1080" height="1920" role="img"></canvas>
+    <div class="botones">
+      <button type="button" id="bajar">Bajar para historias</button>
+      <button type="button" id="otra-vez" class="secundario">Ver la coronación otra vez</button>
+    </div>
+  </section>
+
+  <section class="panel" id="bloque-veredicto" hidden>
+    <h2>El veredicto</h2>
+    <p class="veredicto" id="veredicto"></p>
+    <p class="meta" id="meta"></p>
+  </section>
+
+  <section class="panel" id="bloque-corona" hidden>
+    <h2>La corona</h2>
+    <div id="corona"></div>
+  </section>
+
+  <section class="panel" id="bloque-simpatia" hidden>
+    <h2>Miss Simpatía · la de más vistas</h2>
+    <div id="simpatia"></div>
+  </section>
+
+  <section class="panel" id="bloque-eliminadas" hidden>
+    <h2>Eliminadas · no se leen en chiquito</h2>
+    <ul class="lista" id="eliminadas"></ul>
+  </section>
+
+  <section class="panel" id="bloque-receta" hidden>
+    <h2>La receta de tu próxima portada</h2>
+    <ol class="receta" id="receta"></ol>
+  </section>
+
+  <section class="panel" id="bloque-todas" hidden>
+    <h2>Todas las candidatas</h2>
+    <div class="todas" id="todas"></div>
+  </section>
+
+  <footer>Hecha con Claude Code por alguien que no sabe programar · <a href="https://www.instagram.com/crece_de_cero/">@crece_de_cero</a></footer>
+</main>
+
+<script>
+(function () {
+  var COMANDO = "/miss-portada";
+  var W = 1080, H = 1920;
+  var COLORES = ["#ff2e88", "#ffd23f", "#22d3ee", "#ffffff", "#a78bfa", "#ff7a3d"];
+  var d = null, h = null, animacion = null;
+
+  // ---------- Datos ----------
+  function texto(v) { return v === null || v === undefined ? "" : String(v).trim(); }
+  function numero(v) { var n = Number(v); return v !== null && v !== "" && isFinite(n) && n >= 0 ? Math.round(n) : null; }
+  function color(v, otro) { var c = texto(v); return /^#[0-9a-f]{3,8}$/i.test(c) ? c : otro; }
+  function fechaLinda(f) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto(f));
+    return m ? Number(m[3]) + "/" + Number(m[2]) + "/" + m[1] : "";
+  }
+  function miles(n) { return n === null ? "" : n.toLocaleString("es-AR"); }
+
+  function normalizar(s, fotos) {
+    var vistos = {};
+    var cands = (Array.isArray(s.candidatas) ? s.candidatas : []).map(function (c) {
+      var n = numero(c && c.n);
+      return {
+        n: n, apodo: texto(c && c.apodo) || ("Candidata " + n), texto: texto(c && c.texto),
+        vistas: numero(c && c.vistas), fondo: color(c && c.fondo, "#2a0a3d"), letra: color(c && c.letra, "#ffffff"),
+        src: fotos && typeof fotos[String(n)] === "string" && /^data:image\//.test(fotos[String(n)]) ? fotos[String(n)] : "",
+        img: null,
+      };
+    }).filter(function (c) {
+      if (c.n === null || vistos[c.n]) return false;
+      vistos[c.n] = true; return true;
+    }).slice(0, 12);
+    var existe = function (n) { return n !== null && vistos[n]; };
+    var corona = s.corona && existe(numero(s.corona.n)) ? { n: numero(s.corona.n), porque: texto(s.corona.porque) } : null;
+    var simp = s.simpatia && existe(numero(s.simpatia.n)) ? { n: numero(s.simpatia.n), porque: texto(s.simpatia.porque) } : null;
+    var elim = {}, elimOrden = [];
+    (Array.isArray(s.eliminadas) ? s.eliminadas : []).forEach(function (e) {
+      var n = numero(e && e.n);
+      if (!existe(n) || elim[n] || (corona && corona.n === n)) return;
+      elim[n] = { porque: texto(e.porque), arreglo: texto(e.arreglo) };
+      elimOrden.push(n);
+    });
+    // La mediana la decide /miss-portada (a veces deja afuera la primera, si es de hoy); si
+    // no viene, se calcula con todas las vistas que se ven.
+    var vistas = cands.map(function (c) { return c.vistas; }).filter(function (v) { return v !== null; }).sort(function (a, b) { return a - b; });
+    var mediana = numero(s.mediana);
+    if (mediana === null && s.mediana !== null) mediana = vistas.length ? (vistas.length % 2 ? vistas[(vistas.length - 1) / 2] : Math.round((vistas[vistas.length / 2 - 1] + vistas[vistas.length / 2]) / 2)) : null;
+    return {
+      fecha: texto(s.fecha), cuenta: texto(s.cuenta), red: texto(s.red),
+      cands: cands, corona: corona, simp: simp, elim: elim, elimOrden: elimOrden,
+      doble: !!(corona && simp && corona.n === simp.n),
+      veredicto: texto(s.veredicto), mediana: mediana,
+      receta: (Array.isArray(s.receta) ? s.receta : []).map(texto).filter(Boolean).slice(0, 3),
+    };
+  }
+  function cand(n) { for (var i = 0; i < d.cands.length; i++) if (d.cands[i].n === n) return d.cands[i]; return null; }
+
+  // ---------- Movimiento ----------
+  function limitar(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function avance(t, desde, dura) { return limitar((t - desde) / dura, 0, 1); }
+  function salida(p) { return 1 - Math.pow(1 - p, 3); }
+  function suave(p) { return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; }
+  function rebote(p) { var c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); }
+  function caida(p) {
+    var n1 = 7.5625, d1 = 2.75;
+    if (p < 1 / d1) return n1 * p * p;
+    if (p < 2 / d1) { p -= 1.5 / d1; return n1 * p * p + 0.75; }
+    if (p < 2.5 / d1) { p -= 2.25 / d1; return n1 * p * p + 0.9375; }
+    p -= 2.625 / d1; return n1 * p * p + 0.984375;
+  }
+  function mezcla(a, b, p) { return a + (b - a) * p; }
+  function mezclaRect(a, b, p) { return { x: mezcla(a.x, b.x, p), y: mezcla(a.y, b.y, p), w: mezcla(a.w, b.w, p), h: mezcla(a.h, b.h, p) }; }
+  function azar(semilla) {
+    return function () {
+      semilla |= 0; semilla = semilla + 0x6D2B79F5 | 0;
+      var t = Math.imul(semilla ^ semilla >>> 15, 1 | semilla);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  // Los momentos de la coronación, en segundos.
+  function horario() {
+    var x = {}, n = d.cands.length, k = d.elimOrden.length;
+    x.entrada = 0.75; x.paso = Math.min(0.09, 1 / Math.max(1, n));
+    var finEntrada = x.entrada + x.paso * (n - 1) + 0.5;
+    x.elim = finEntrada + 0.3;
+    x.elimPaso = k ? Math.min(0.5, 2.2 / k) : 0;
+    var finElim = x.elim + (k ? x.elimPaso * (k - 1) + 0.45 : 0);
+    x.simp = finElim + (k ? 0.3 : 0);
+    x.redoble = x.simp + (d.simp ? 1.1 : 0) + 0.2;
+    x.mover = x.redoble + 1.0;
+    x.coronaCae = x.mover + 0.55;
+    x.confeti = x.coronaCae + 0.6;
+    x.textos = x.coronaCae + 0.45;
+    x.fin = x.confeti + 2.6;
+    return x;
+  }
+
+  // ---------- Dónde va cada una ----------
+  var medidor = document.createElement("canvas").getContext("2d");
+  function renglones(ctx, contenido, ancho, max) {
+    var palabras = texto(contenido).split(/\s+/).filter(Boolean), lineas = [], linea = "";
+    palabras.forEach(function (p) {
+      var prueba = linea ? linea + " " + p : p;
+      if (!linea || ctx.measureText(prueba).width <= ancho) linea = prueba;
+      else { lineas.push(linea); linea = p; }
+    });
+    if (linea) lineas.push(linea);
+    if (lineas.length > max) {
+      lineas = lineas.slice(0, max);
+      var ultima = lineas[max - 1];
+      while (ultima && ctx.measureText(ultima + "…").width > ancho) ultima = ultima.replace(/\s*\S+$/, "");
+      lineas[max - 1] = ultima + "…";
+    }
+    return lineas;
+  }
+
+  function proporcion() {
+    for (var i = 0; i < d.cands.length; i++) {
+      var im = d.cands[i].img;
+      if (im && im.naturalWidth) return limitar(im.naturalWidth / im.naturalHeight, 0.5625, 1);
+    }
+    return 0.75;
+  }
+
+  function armarLugares() {
+    var asp = proporcion(), n = d.cands.length, L = { asp: asp, grilla: {}, final: {} };
+    // En el escenario: todas en grilla, la última fila centrada.
+    var cols = n <= 4 ? 2 : n <= 9 ? 3 : 4, filas = Math.ceil(n / cols), gap = 26;
+    var areaW = 900, areaY = 380, areaH = 1330;
+    var w = (areaW - gap * (cols - 1)) / cols, alto = w / asp;
+    if (alto * filas + gap * (filas - 1) > areaH) { alto = (areaH - gap * (filas - 1)) / filas; w = alto * asp; }
+    var totalH = alto * filas + gap * (filas - 1), y0 = areaY + (areaH - totalH) / 2;
+    d.cands.forEach(function (c, i) {
+      var fila = Math.floor(i / cols), enFila = fila === filas - 1 ? n - fila * cols : cols;
+      var anchoFila = w * enFila + gap * (enFila - 1);
+      L.grilla[c.n] = { x: (W - anchoFila) / 2 + (i % cols) * (w + gap), y: y0 + fila * (alto + gap), w: w, h: alto };
+    });
+
+    // Al final: la corona grande arriba; abajo Miss Simpatía y las eliminadas.
+    var gw = Math.min(500, 640 * asp), gh = gw / asp, gy = 470;
+    L.ganadora = { x: (W - gw) / 2, y: gy, w: gw, h: gh };
+    if (d.corona) L.final[d.corona.n] = L.ganadora;
+    medidor.font = '800 40px "Bricolage Grotesque"';
+    var apodo = d.corona ? cand(d.corona.n).apodo.toUpperCase() : "";
+    L.pastilla = { w: Math.min(900, medidor.measureText(apodo).width + 70), h: 74, y: gy + gh + 40 };
+    medidor.font = '600 36px "Bricolage Grotesque"';
+    // Renglones parejos: el ancho más angosto que no agrega un renglón (así no queda una
+    // palabra sola abajo).
+    var anchoPorque = 880;
+    if (d.corona) {
+      // Se cuenta sin tope (9): con el tope de 3, un texto que ya no entra también da 3.
+      var cuantos = renglones(medidor, d.corona.porque, 880, 9).length;
+      while (anchoPorque > 560 && renglones(medidor, d.corona.porque, anchoPorque - 20, 9).length === cuantos) anchoPorque -= 20;
+    }
+    L.porque = d.corona ? renglones(medidor, d.corona.porque, anchoPorque, 3) : [];
+    var yTextos = L.pastilla.y + L.pastilla.h + 26 + (d.doble ? 46 : 0);
+    L.yPorque = yTextos;
+    var yFila = (d.corona ? yTextos + L.porque.length * 46 : gy + gh + 60) + 40;
+    var altoFila = Math.max(180, 1752 - yFila - 104);
+    L.yFila = yFila; L.altoFila = altoFila;
+
+    // Miss Simpatía, abajo a la izquierda: corrida hacia adentro para que su cartel no
+    // quede debajo del telón.
+    var x0 = 80;
+    if (d.simp && !d.doble) {
+      var sh = altoFila, sw = sh * asp;
+      L.final[d.simp.n] = { x: 130, y: yFila, w: sw, h: sh };
+      L.simp = L.final[d.simp.n];
+      x0 = 130 + sw + 80;
+    }
+    // Si Miss Simpatía también quedó eliminada, se ve en su lugar (con el sello), no dos veces.
+    var visibles = d.elimOrden.filter(function (n) { return !L.simp || n !== d.simp.n; }).slice(0, 8);
+    var k = visibles.length, x1 = 1000, area = x1 - x0, g2 = 18;
+    L.elimArea = { x: x0, w: area }; L.elimVisibles = k;
+    if (k) {
+      var ch = altoFila, cw = ch * asp, colsE = k, filasE = 1;
+      if (k * cw + (k - 1) * g2 > area) {
+        filasE = 2; colsE = Math.ceil(k / 2); ch = (altoFila - g2) / 2; cw = ch * asp;
+        if (colsE * cw + (colsE - 1) * g2 > area) { cw = (area - (colsE - 1) * g2) / colsE; ch = cw / asp; }
+      }
+      var anchoTotal = colsE * cw + (colsE - 1) * g2, xs = x0 + (area - anchoTotal) / 2;
+      visibles.forEach(function (n, i) {
+        L.final[n] = { x: xs + (i % colsE) * (cw + g2), y: yFila + Math.floor(i / colsE) * (ch + g2), w: cw, h: ch };
+      });
+      L.elimAlto = filasE * ch + (filasE - 1) * g2;
+    } else L.elimAlto = altoFila;
+    return L;
+  }
+
+  // ---------- Dibujo ----------
+  var conFiltro = (function () {
+    var c = document.createElement("canvas").getContext("2d");
+    if (typeof c.filter !== "string") return false;
+    c.filter = "grayscale(1)"; return c.filter === "grayscale(1)";
+  })();
+
+  function marco(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+
+  function foto(ctx, img, x, y, w, h) {
+    var iw = img.naturalWidth, ih = img.naturalHeight, s = Math.max(w / iw, h / ih);
+    var sw = w / s, sh = h / s;
+    ctx.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, x, y, w, h);
+  }
+
+  function portadaDeTexto(ctx, c, x, y, w, h) {
+    ctx.fillStyle = c.fondo; ctx.fillRect(x, y, w, h);
+    var t = (c.texto || c.apodo).toUpperCase(), tam = Math.round(w * 0.15), lineas;
+    do {
+      ctx.font = "800 " + tam + 'px "Bricolage Grotesque"';
+      lineas = renglones(ctx, t, w * 0.82, 6);
+      tam -= 2;
+    } while (lineas.length * tam * 1.08 > h * 0.78 && tam > 12);
+    tam += 2;
+    ctx.fillStyle = c.letra; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    var alto = tam * 1.08, ys = y + h / 2 - (lineas.length - 1) * alto / 2;
+    lineas.forEach(function (l, i) { ctx.fillText(l, x + w / 2, ys + i * alto); });
+    if (c.vistas !== null) {
+      ctx.font = "800 " + Math.round(w * 0.075) + 'px "Bricolage Grotesque"'; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.globalAlpha *= 0.9;
+      ctx.fillText("▶ " + miles(c.vistas), x + w * 0.07, y + h - w * 0.07);
+    }
+  }
+
+  // Una candidata: marco blanco, la foto (o su texto), y lo que le toque.
+  function candidata(ctx, c, r, o) {
+    if (o.alfa <= 0.001 || o.escala <= 0.001) return;
+    ctx.save();
+    ctx.globalAlpha = o.alfa;
+    var cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+    ctx.translate(cx, cy); ctx.rotate(o.giro || 0); ctx.scale(o.escala, o.escala); ctx.translate(-cx, -cy);
+    var borde = Math.max(5, r.w * 0.025), radio = Math.max(8, r.w * 0.05);
+    ctx.save();
+    ctx.shadowColor = "rgba(10, 0, 25, 0.55)"; ctx.shadowBlur = r.w * 0.12; ctx.shadowOffsetY = r.w * 0.04;
+    marco(ctx, r.x - borde, r.y - borde, r.w + borde * 2, r.h + borde * 2, radio + borde);
+    ctx.fillStyle = o.ganadora ? "#ffd23f" : "#ffffff"; ctx.fill();
+    ctx.restore();
+    ctx.save();
+    marco(ctx, r.x, r.y, r.w, r.h, radio); ctx.clip();
+    if (o.gris > 0 && conFiltro) ctx.filter = "grayscale(" + o.gris.toFixed(2) + ") brightness(" + (1 - 0.25 * o.gris).toFixed(2) + ")";
+    if (c.img) foto(ctx, c.img, r.x, r.y, r.w, r.h); else portadaDeTexto(ctx, c, r.x, r.y, r.w, r.h);
+    ctx.filter = "none";
+    if (o.gris > 0 && !conFiltro) { ctx.fillStyle = "rgba(25, 10, 35, " + (0.55 * o.gris) + ")"; ctx.fillRect(r.x, r.y, r.w, r.h); }
+    if (o.apagada > 0) { ctx.fillStyle = "rgba(15, 0, 30, " + (0.6 * o.apagada) + ")"; ctx.fillRect(r.x, r.y, r.w, r.h); }
+    ctx.restore();
+    if (o.numero > 0) {
+      var rn = Math.max(18, r.w * 0.09);
+      ctx.globalAlpha = o.alfa * o.numero;
+      ctx.beginPath(); ctx.arc(r.x + rn * 0.9, r.y + rn * 0.9, rn, 0, Math.PI * 2);
+      ctx.fillStyle = "#1a0726"; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = "#fff"; ctx.stroke();
+      ctx.fillStyle = "#fff"; ctx.font = "800 " + Math.round(rn * 1.05) + 'px "Bricolage Grotesque"';
+      ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(c.n), r.x + rn * 0.9, r.y + rn * 0.95);
+      ctx.globalAlpha = o.alfa;
+    }
+    if (o.banda > 0) banda(ctx, r, o.banda);
+    if (o.sello > 0) sello(ctx, r, o.sello);
+    ctx.restore();
+  }
+
+  // La banda de Miss Simpatía: cruza la esquina de abajo a la izquierda (así no tapa el texto
+  // de la portada, que casi siempre va arriba) y entra deslizándose.
+  function banda(ctx, r, p) {
+    var e = salida(p), ancho = r.w * 1.5, alto = Math.max(30, r.w * 0.17);
+    ctx.save();
+    marco(ctx, r.x - 10, r.y - 10, r.w + 20, r.h + 20, 18); ctx.clip();
+    ctx.translate(r.x + r.w * 0.28, r.y + r.h - r.w * 0.235); ctx.rotate(0.7);
+    ctx.translate((e - 1) * ancho, 0);
+    var g = ctx.createLinearGradient(0, -alto / 2, 0, alto / 2);
+    g.addColorStop(0, "#0ea5c6"); g.addColorStop(0.18, "#22d3ee"); g.addColorStop(0.82, "#22d3ee"); g.addColorStop(1, "#0b7f99");
+    ctx.shadowColor = "rgba(0, 0, 0, 0.35)"; ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
+    ctx.fillStyle = g; ctx.fillRect(-ancho / 2, -alto / 2, ancho, alto);
+    ctx.shadowColor = "transparent";
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(-ancho / 2, -alto / 2 + 4, ancho, 3); ctx.fillRect(-ancho / 2, alto / 2 - 7, ancho, 3);
+    ctx.fillStyle = "#1a0726"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    var tam = Math.round(alto * 0.46);
+    ctx.font = "800 " + tam + 'px "Bricolage Grotesque"';
+    while (ctx.measureText("MISS SIMPATÍA").width > r.w * 0.6 && tam > 8) { tam -= 1; ctx.font = "800 " + tam + 'px "Bricolage Grotesque"'; }
+    ctx.fillText("MISS SIMPATÍA", 0, alto * 0.04);
+    ctx.restore();
+  }
+
+  // El sello de eliminada: cae grande y se aplasta sobre la foto.
+  function sello(ctx, r, p) {
+    var e = p < 1 ? rebote(p) : 1, escala = mezcla(2.1, 1, e), alfa = limitar(p * 3, 0, 1);
+    var ancho = r.w * 0.92, alto = Math.max(30, r.w * 0.2);
+    ctx.save();
+    ctx.globalAlpha *= alfa;
+    ctx.translate(r.x + r.w / 2, r.y + r.h / 2); ctx.rotate(-0.28); ctx.scale(escala, escala);
+    marco(ctx, -ancho / 2, -alto / 2, ancho, alto, alto * 0.18);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.92)"; ctx.fill();
+    ctx.lineWidth = Math.max(3, alto * 0.09); ctx.strokeStyle = "#ff3b5c"; ctx.stroke();
+    ctx.fillStyle = "#e11d48"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    var tam = Math.round(alto * 0.5);
+    ctx.font = "800 " + tam + 'px "Bricolage Grotesque"';
+    while (ctx.measureText("ELIMINADA").width > ancho * 0.86 && tam > 8) { tam -= 1; ctx.font = "800 " + tam + 'px "Bricolage Grotesque"'; }
+    ctx.fillText("ELIMINADA", 0, alto * 0.04);
+    ctx.restore();
+  }
+
+  // La corona: amarilla, con piedras rosas y turquesas.
+  function corona(ctx, cx, base, ancho, giro, alfa) {
+    if (alfa <= 0) return;
+    var a = ancho, alto = a * 0.62;
+    ctx.save();
+    ctx.globalAlpha *= alfa;
+    ctx.translate(cx, base); ctx.rotate(giro);
+    ctx.shadowColor = "rgba(40, 0, 30, 0.45)"; ctx.shadowBlur = a * 0.08; ctx.shadowOffsetY = a * 0.03;
+    var puntas = [[-0.5, 0], [-0.5, -0.62], [-0.27, -0.3], [0, -0.82], [0.27, -0.3], [0.5, -0.62], [0.5, 0]];
+    ctx.beginPath();
+    puntas.forEach(function (p, i) { var x = p[0] * a, y = p[1] * alto; if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
+    ctx.closePath();
+    var g = ctx.createLinearGradient(0, -alto, 0, 0);
+    g.addColorStop(0, "#fff2a8"); g.addColorStop(0.45, "#ffd23f"); g.addColorStop(1, "#f59e0b");
+    ctx.fillStyle = g; ctx.fill();
+    ctx.shadowColor = "transparent";
+    ctx.lineWidth = a * 0.03; ctx.strokeStyle = "#b45309"; ctx.lineJoin = "round"; ctx.stroke();
+    // La base de la corona.
+    marco(ctx, -a * 0.53, -alto * 0.16, a * 1.06, alto * 0.26, alto * 0.08);
+    ctx.fillStyle = "#ffd23f"; ctx.fill(); ctx.stroke();
+    // Las bolitas de las puntas y las piedras.
+    [[-0.5, -0.62], [0, -0.82], [0.5, -0.62]].forEach(function (p) {
+      ctx.beginPath(); ctx.arc(p[0] * a, p[1] * alto, a * 0.055, 0, Math.PI * 2);
+      ctx.fillStyle = "#fff7d1"; ctx.fill(); ctx.lineWidth = a * 0.02; ctx.stroke();
+    });
+    [[-0.3, "#ff2e88"], [0, "#22d3ee"], [0.3, "#ff2e88"]].forEach(function (p) {
+      ctx.beginPath(); ctx.ellipse(p[0] * a, -alto * 0.03, a * 0.06, a * 0.048, 0, 0, Math.PI * 2);
+      ctx.fillStyle = p[1]; ctx.fill(); ctx.lineWidth = a * 0.015; ctx.stroke();
+      ctx.beginPath(); ctx.arc(p[0] * a - a * 0.02, -alto * 0.03 - a * 0.016, a * 0.014, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.85)"; ctx.fill();
+    });
+    // Un brillo.
+    ctx.beginPath(); ctx.moveTo(-a * 0.36, -alto * 0.22); ctx.lineTo(-a * 0.3, -alto * 0.5);
+    ctx.lineWidth = a * 0.025; ctx.strokeStyle = "rgba(255, 255, 255, 0.7)"; ctx.lineCap = "round"; ctx.stroke();
+    ctx.restore();
+  }
+
+  function estrellita(ctx, x, y, r, alfa) {
+    ctx.save(); ctx.globalAlpha *= alfa; ctx.translate(x, y);
+    ctx.beginPath();
+    for (var i = 0; i < 8; i++) {
+      var ang = i * Math.PI / 4, rr = i % 2 ? r * 0.28 : r;
+      ctx.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr);
+    }
+    ctx.closePath(); ctx.fillStyle = "#fff6c9"; ctx.fill();
+    ctx.restore();
+  }
+
+  function fondo(ctx, t, foco) {
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#1f0a3d"); g.addColorStop(0.55, "#4c0d6b"); g.addColorStop(1, "#8b1060");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // El piso del escenario.
+    var p = ctx.createRadialGradient(540, 1960, 60, 540, 1960, 820);
+    p.addColorStop(0, "rgba(255, 46, 136, 0.75)"); p.addColorStop(1, "rgba(255, 46, 136, 0)");
+    ctx.fillStyle = p; ctx.fillRect(0, 1100, W, 820);
+    // Los dos focos.
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    [[90, -60], [990, -60]].forEach(function (o) {
+      var ang = Math.atan2(foco.y - o[1], foco.x - o[0]), largo = 2600, abre = 0.13;
+      var lg = ctx.createLinearGradient(o[0], o[1], foco.x, foco.y);
+      lg.addColorStop(0, "rgba(255, 240, 210, 0.30)"); lg.addColorStop(1, "rgba(255, 240, 210, 0.05)");
+      ctx.beginPath(); ctx.moveTo(o[0], o[1]);
+      ctx.lineTo(o[0] + Math.cos(ang - abre) * largo, o[1] + Math.sin(ang - abre) * largo);
+      ctx.lineTo(o[0] + Math.cos(ang + abre) * largo, o[1] + Math.sin(ang + abre) * largo);
+      ctx.closePath(); ctx.fillStyle = lg; ctx.fill();
+    });
+    var halo = ctx.createRadialGradient(foco.x, foco.y, 10, foco.x, foco.y, 420);
+    halo.addColorStop(0, "rgba(255, 230, 250, 0.22)"); halo.addColorStop(1, "rgba(255, 230, 250, 0)");
+    ctx.fillStyle = halo; ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+    // Estrellitas que titilan.
+    var rnd = azar(7);
+    for (var i = 0; i < 26; i++) {
+      var x = 60 + rnd() * 960, y = 40 + rnd() * 1800, r = 5 + rnd() * 9, fase = rnd() * 6.28;
+      estrellita(ctx, x, y, r, 0.25 + 0.35 * (0.5 + 0.5 * Math.sin(t * 2.4 + fase)));
+    }
+  }
+
+  function titulo(ctx) {
+    ctx.save();
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#ffd23f"; ctx.font = '800 30px "Bricolage Grotesque"';
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "5px";
+    ctx.fillText("APPS SÚPER LOCAS · DÍA 5", 540, 128);
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+    ctx.shadowColor = "#ff2e88"; ctx.shadowBlur = 34;
+    ctx.fillStyle = "#ffffff"; ctx.font = 'italic 900 142px "Fraunces"';
+    ctx.fillText("Miss Portada", 540, 262);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.82)"; ctx.font = '600 32px "Bricolage Grotesque"';
+    var linea = [d.cuenta, d.red, fechaLinda(d.fecha)].filter(Boolean).join(" · ");
+    if (linea) ctx.fillText(linea, 540, 322);
+    ctx.restore();
+  }
+
+  // Un telón de terciopelo, con pliegues que se aprietan cuando se abre.
+  function telon(ctx, x, ancho, izquierda) {
+    if (ancho <= 0) return;
+    ctx.save();
+    var pliegues = 7, paso = ancho / pliegues;
+    ctx.beginPath(); ctx.rect(x, 0, ancho, H); ctx.clip();
+    for (var i = 0; i < pliegues; i++) {
+      var px = x + i * paso, g = ctx.createLinearGradient(px, 0, px + paso, 0);
+      g.addColorStop(0, "#5c0630"); g.addColorStop(0.35, "#c2185b"); g.addColorStop(0.6, "#e0457b"); g.addColorStop(1, "#6d0838");
+      ctx.fillStyle = g; ctx.fillRect(px, 0, paso + 1, H);
+    }
+    var sombra = ctx.createLinearGradient(izquierda ? x + ancho - 30 : x, 0, izquierda ? x + ancho : x + 30, 0);
+    sombra.addColorStop(izquierda ? 0 : 1, "rgba(0, 0, 0, 0)"); sombra.addColorStop(izquierda ? 1 : 0, "rgba(0, 0, 0, 0.45)");
+    ctx.fillStyle = sombra; ctx.fillRect(x, 0, ancho, H);
+    ctx.restore();
+  }
+
+  function cenefa(ctx) {
+    var g = ctx.createLinearGradient(0, 0, 0, 56);
+    g.addColorStop(0, "#5c0630"); g.addColorStop(1, "#a3134d");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, 40);
+    ctx.beginPath();
+    for (var x = 0; x <= W; x += 60) ctx.arc(x + 30, 40, 30, 0, Math.PI);
+    ctx.fill();
+    ctx.fillStyle = "#ffd23f";
+    for (var x2 = 30; x2 <= W; x2 += 60) { ctx.beginPath(); ctx.arc(x2, 74, 6, 0, Math.PI * 2); ctx.fill(); }
+  }
+
+  function confeti(ctx, t, origen) {
+    var tau = t - h.confeti;
+    if (tau < 0 || tau > 2.6) return;
+    var rnd = azar(31), alfa = tau < 2 ? 1 : 1 - (tau - 2) / 0.6;
+    ctx.save(); ctx.globalAlpha *= alfa;
+    for (var i = 0; i < 150; i++) {
+      var vx = (rnd() - 0.5) * 1500, vy = -400 - rnd() * 1100, giro = (rnd() - 0.5) * 14;
+      var tam = 10 + rnd() * 14, c = COLORES[Math.floor(rnd() * COLORES.length)];
+      var x = origen.x + (rnd() - 0.5) * 120 + vx * tau, y = origen.y + vy * tau + 0.5 * 1700 * tau * tau;
+      if (y > H + 40) continue;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(giro * tau + i);
+      ctx.fillStyle = c; ctx.fillRect(-tam / 2, -tam * 0.3, tam, tam * 0.6);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function pastilla(ctx, texto_, cx, y, w, alto, relleno, tinta) {
+    marco(ctx, cx - w / 2, y, w, alto, alto / 2);
+    ctx.fillStyle = relleno; ctx.fill();
+    ctx.fillStyle = tinta; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(texto_, cx, y + alto / 2 + 2);
+  }
+
+  function textosFinales(ctx, L, p) {
+    if (p <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = p;
+    var sube = (1 - salida(p)) * 30;
+    ctx.translate(0, sube);
+    if (d.corona) {
+      var c = cand(d.corona.n);
+      ctx.font = '800 40px "Bricolage Grotesque"';
+      pastilla(ctx, c.apodo.toUpperCase(), 540, L.pastilla.y, L.pastilla.w, L.pastilla.h, "#ff2e88", "#ffffff");
+      if (d.doble) {
+        ctx.fillStyle = "#22d3ee"; ctx.font = '800 32px "Bricolage Grotesque"'; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+        ctx.fillText("DOBLE CORONA" + (c.vistas !== null ? " · " + miles(c.vistas) + " VISTAS" : ""), 540, L.pastilla.y + L.pastilla.h + 52);
+      }
+      ctx.fillStyle = "#ffffff"; ctx.font = '600 36px "Bricolage Grotesque"'; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+      L.porque.forEach(function (l, i) { ctx.fillText(l, 540, L.yPorque + 34 + i * 46); });
+    } else {
+      ctx.fillStyle = "#ffffff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = 'italic 900 64px "Fraunces"'; ctx.fillText("La corona", 540, L.ganadora.y + L.ganadora.h * 0.4);
+      ctx.fillText("quedó desierta", 540, L.ganadora.y + L.ganadora.h * 0.4 + 76);
+    }
+    var yEtiqueta = L.yFila + Math.max(L.simp ? L.simp.h : 0, L.elimAlto) + 24;
+    function etiquetaFinal(t, cx, relleno, tinta) {
+      ctx.font = '800 28px "Bricolage Grotesque"';
+      pastilla(ctx, t, cx, yEtiqueta, ctx.measureText(t).width + 40, 48, relleno, tinta);
+    }
+    if (L.simp) {
+      // El centro del cartel nunca más cerca del borde que la mitad de su ancho más el telón.
+      ctx.font = '800 28px "Bricolage Grotesque"';
+      var s = cand(d.simp.n), sx = Math.max(L.simp.x + L.simp.w / 2, 84 + (ctx.measureText("MISS SIMPATÍA").width + 40) / 2);
+      etiquetaFinal("MISS SIMPATÍA", sx, "#22d3ee", "#1a0726");
+      if (s.vistas !== null) {
+        ctx.fillStyle = "#ffffff"; ctx.font = '900 40px "Fraunces"'; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+        ctx.fillText(miles(s.vistas) + " vistas", sx, yEtiqueta + 96);
+      }
+    }
+    var ex = L.elimArea.x + L.elimArea.w / 2;
+    if (L.elimVisibles) {
+      etiquetaFinal("ELIMINADAS · " + d.elimOrden.length, ex, "#ff3b5c", "#ffffff");
+      ctx.fillStyle = "#ffffff"; ctx.font = '600 32px "Bricolage Grotesque"'; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+      ctx.fillText("no se leen en chiquito", ex, yEtiqueta + 92);
+    } else {
+      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = "#ffffff"; ctx.font = 'italic 900 46px "Fraunces"';
+      var aviso = d.elimOrden.length ? "La única eliminada es Miss Simpatía" : "Ninguna eliminada: todas se leen en chiquito";
+      var lineas = renglones(ctx, aviso, L.elimArea.w - 40, 3);
+      lineas.forEach(function (l, i) { ctx.fillText(l, ex, L.yFila + L.altoFila / 2 - (lineas.length - 1) * 28 + i * 56); });
+    }
+    ctx.restore();
+  }
+
+  // Un cuadro de la coronación, en el segundo t.
+  function pintar(ctx, t, L) {
+    var gana = d.corona ? d.corona.n : null;
+    var pMover = suave(avance(t, h.mover, 0.85));
+    var foco = { x: 540 + Math.sin(t * 1.3) * 300 * (1 - pMover), y: mezcla(1000, L.ganadora.y + L.ganadora.h * 0.45, pMover) };
+    if (!d.corona) foco.y = 1000;
+    fondo(ctx, t, foco);
+    titulo(ctx);
+
+    var orden = d.cands.slice().sort(function (a, b) {
+      function peso(c) { return c.n === gana ? 3 : (d.simp && c.n === d.simp.n) ? 2 : d.elim[c.n] ? 1 : 0; }
+      return peso(a) - peso(b);
+    });
+    var pRedoble = avance(t, h.redoble, 0.4);
+    orden.forEach(function (c) {
+      var i = d.cands.indexOf(c), A = L.grilla[c.n], C = L.final[c.n];
+      var pEntra = avance(t, h.entrada + i * h.paso, 0.5);
+      var r = C ? mezclaRect(A, C, pMover) : A;
+      var otra = !C;
+      var o = {
+        alfa: pEntra > 0 ? 1 : 0, escala: pEntra < 1 ? Math.max(0, rebote(pEntra)) : 1, giro: 0,
+        gris: 0, sello: 0, banda: 0, numero: 1 - pMover, apagada: 0, ganadora: c.n === gana && pMover > 0.5,
+      };
+      if (c.n !== gana) o.apagada = pRedoble * (1 - pMover);
+      if (otra) { o.alfa *= 1 - avance(t, h.mover, 0.5); o.escala *= 1 - 0.2 * pMover; }
+      if (d.elim[c.n]) {
+        var j = d.elimOrden.indexOf(c.n), te = h.elim + j * h.elimPaso;
+        o.sello = avance(t, te, 0.4); o.gris = avance(t, te + 0.1, 0.3); o.giro = -0.035 * o.gris * (1 - pMover);
+      }
+      if (d.simp && c.n === d.simp.n) o.banda = avance(t, h.simp, 0.6);
+      candidata(ctx, c, r, o);
+      if (d.simp && c.n === d.simp.n && c.vistas !== null && pMover < 1) {
+        var pv = avance(t, h.simp + 0.45, 0.35);
+        if (pv > 0) {
+          ctx.save(); ctx.globalAlpha = (1 - pMover);
+          var esc = pv < 1 ? rebote(pv) : 1, bx = r.x + r.w / 2, by = r.y + r.h + 4;
+          ctx.translate(bx, by); ctx.scale(esc, esc);
+          ctx.font = "800 " + Math.round(Math.max(22, r.w * 0.11)) + 'px "Bricolage Grotesque"';
+          var et = "♥ " + miles(c.vistas) + " vistas", ew = ctx.measureText(et).width + 34, eh = Math.max(40, r.w * 0.17);
+          pastilla(ctx, et, 0, -eh / 2, ew, eh, "#22d3ee", "#1a0726");
+          ctx.restore();
+        }
+      }
+    });
+
+    // La corona cae sobre la ganadora.
+    if (d.corona) {
+      var G = mezclaRect(L.grilla[gana], L.final[gana], pMover);
+      var pc = avance(t, h.coronaCae, 0.65), ancho = G.w * 0.56;
+      if (pc > 0) {
+        // Apoyada justo en el borde de arriba: más abajo taparía el texto de la portada.
+        var base = mezcla(-260, G.y - ancho * 0.02, caida(pc));
+        corona(ctx, G.x + G.w / 2, base, ancho, mezcla(-0.5, -0.1, salida(pc)), 1);
+      }
+    }
+
+    textosFinales(ctx, L, avance(t, h.textos, 0.6));
+
+    // «Y la corona es para…»
+    var pr = avance(t, h.redoble, 0.35) * (1 - avance(t, h.mover + 0.1, 0.35));
+    if (pr > 0) {
+      ctx.save(); ctx.globalAlpha = pr;
+      marco(ctx, 80, 900, 920, 190, 40); ctx.fillStyle = "rgba(20, 0, 35, 0.82)"; ctx.fill();
+      ctx.fillStyle = "#ffffff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = 'italic 900 84px "Fraunces"';
+      ctx.fillText(d.corona ? "Y la corona es para…" : "Y la corona…", 540, 995);
+      ctx.restore();
+    }
+
+    if (d.corona) {
+      var Gf = L.final[gana];
+      confeti(ctx, t, { x: Gf.x + Gf.w / 2, y: Gf.y });
+    }
+
+    // Los telones: se abren al principio y quedan recogidos a los costados.
+    var pt = suave(avance(t, 0.1, 1.05)), lado = mezcla(560, 64, pt);
+    telon(ctx, 0, lado, true);
+    telon(ctx, W - lado, lado, false);
+    cenefa(ctx);
+
+    ctx.save();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.75)"; ctx.font = '700 26px "Bricolage Grotesque"'; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.globalAlpha = avance(t, h.textos, 0.6);
+    ctx.fillText("@crece_de_cero · hecha con Claude Code", 540, 1878);
+    ctx.restore();
+  }
+
+  // ---------- La página ----------
+  var lienzo = document.getElementById("lienzo"), ctxLienzo = lienzo.getContext("2d"), lugares = null;
+
+  function detener() { if (animacion) cancelAnimationFrame(animacion); animacion = null; }
+  function cuadro(t) { ctxLienzo.clearRect(0, 0, W, H); pintar(ctxLienzo, t, lugares); }
+  function reproducir() {
+    detener();
+    var quieto = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (quieto) { cuadro(h.fin); return; }
+    var inicio = null;
+    function paso(ahora) {
+      if (inicio === null) inicio = ahora;
+      var t = (ahora - inicio) / 1000;
+      cuadro(Math.min(t, h.fin));
+      if (t < h.fin) animacion = requestAnimationFrame(paso); else animacion = null;
+    }
+    animacion = requestAnimationFrame(paso);
+  }
+  // Para grabar la coronación cuadro por cuadro: missCuadro(segundos) devuelve la duración.
+  window.missCuadro = function (t) { detener(); cuadro(Math.max(0, Math.min(t, h.fin))); return h.fin; };
+
+  function miniatura(c) {
+    var caja = document.createElement("div"); caja.className = "mini";
+    if (c.src) {
+      var img = document.createElement("img"); img.src = c.src; img.alt = "Portada " + c.n + (c.texto ? ": " + c.texto : "");
+      caja.appendChild(img);
+    } else {
+      caja.classList.add("sin-foto"); caja.style.background = c.fondo; caja.style.color = c.letra;
+      caja.textContent = c.texto || c.apodo;
+    }
+    return caja;
+  }
+  function ficha(c, lineas) {
+    var f = document.createElement("div"); f.className = "ficha";
+    f.appendChild(miniatura(c));
+    var cuerpo = document.createElement("div");
+    var h3 = document.createElement("h3"); h3.textContent = c.apodo; cuerpo.appendChild(h3);
+    lineas.forEach(function (l) { if (l) cuerpo.appendChild(l); });
+    f.appendChild(cuerpo);
+    return f;
+  }
+  function parrafo(t, clase) { if (!t) return null; var p = document.createElement("p"); p.textContent = t; if (clase) p.className = clase; return p; }
+  function etiqueta(t, clase) { var s = document.createElement("span"); s.className = "etiqueta " + clase; s.textContent = t; return s; }
+
+  function llenarPaneles() {
+    if (d.veredicto) {
+      document.getElementById("veredicto").textContent = d.veredicto;
+      var conVistas = d.cands.filter(function (c) { return c.vistas !== null; }).length;
+      document.getElementById("meta").textContent = d.cands.length + " candidatas" + (d.cuenta ? " de " + d.cuenta : "") +
+        (d.mediana !== null ? ". La mediana de vistas es " + miles(d.mediana) + (conVistas < d.cands.length ? " (de las que muestran vistas)" : "") + "." : ".");
+      document.getElementById("bloque-veredicto").hidden = false;
+    }
+    var bc = document.getElementById("corona"); bc.textContent = "";
+    if (d.corona) {
+      var c = cand(d.corona.n), extra = document.createElement("p");
+      if (c.vistas !== null) extra.appendChild(etiqueta(miles(c.vistas) + " vistas", "vistas"));
+      if (d.doble) extra.appendChild(etiqueta("Doble corona: también es Miss Simpatía", "doble"));
+      bc.appendChild(ficha(c, [parrafo(c.texto ? "«" + c.texto + "»" : "Sin texto en la portada", "arreglo"), parrafo(d.corona.porque), extra.childNodes.length ? extra : null]));
+    } else bc.appendChild(parrafo("Quedó desierta: ninguna pasó la primera ronda. La receta de abajo es para que la próxima la gane.", "vacio"));
+    document.getElementById("bloque-corona").hidden = false;
+
+    var bs = document.getElementById("simpatia"); bs.textContent = "";
+    if (d.simp) {
+      var s = cand(d.simp.n), ex = document.createElement("p");
+      if (s.vistas !== null) ex.appendChild(etiqueta(miles(s.vistas) + " vistas", "vistas"));
+      bs.appendChild(ficha(s, [ex.childNodes.length ? ex : null, parrafo(d.simp.porque)]));
+    } else bs.appendChild(parrafo("Quedó desierta: en la captura no se ven las vistas. Pásale a " + COMANDO + " la captura de la pestaña de reels.", "vacio"));
+    document.getElementById("bloque-simpatia").hidden = false;
+
+    var ul = document.getElementById("eliminadas"); ul.textContent = "";
+    if (d.elimOrden.length) {
+      d.elimOrden.forEach(function (n) {
+        var e = d.elim[n], li = document.createElement("li"), arreglo = null;
+        if (e.arreglo) { arreglo = document.createElement("p"); arreglo.className = "arreglo"; var b = document.createElement("strong"); b.textContent = "Arreglo: "; arreglo.appendChild(b); arreglo.appendChild(document.createTextNode(e.arreglo)); }
+        li.appendChild(ficha(cand(n), [parrafo(e.porque), arreglo]));
+        ul.appendChild(li);
+      });
+    } else { var li = document.createElement("li"); li.appendChild(parrafo("Ninguna: todas se leen en chiquito.", "vacio")); ul.appendChild(li); }
+    document.getElementById("bloque-eliminadas").hidden = false;
+
+    if (d.receta.length) {
+      var ol = document.getElementById("receta"); ol.textContent = "";
+      d.receta.forEach(function (r) { var li2 = document.createElement("li"); li2.textContent = r; ol.appendChild(li2); });
+      document.getElementById("bloque-receta").hidden = false;
+    }
+
+    var todas = document.getElementById("todas"); todas.textContent = "";
+    d.cands.forEach(function (c) {
+      var fig = document.createElement("figure");
+      if (d.elim[c.n]) fig.className = "eliminada";
+      fig.appendChild(miniatura(c));
+      var premio = d.corona && d.corona.n === c.n ? ["Corona", ""] : d.simp && d.simp.n === c.n ? ["Simpatía", "simpatia"] : d.elim[c.n] ? ["Fuera", "fuera"] : null;
+      if (premio) { var pr = document.createElement("span"); pr.className = "premio " + premio[1]; pr.textContent = premio[0]; fig.appendChild(pr); }
+      var cap = document.createElement("figcaption"); cap.textContent = c.n + ". " + c.apodo;
+      var v = document.createElement("span"); v.textContent = c.vistas !== null ? miles(c.vistas) + " vistas" : "sin vistas a la vista"; cap.appendChild(v);
+      fig.appendChild(cap);
+      todas.appendChild(fig);
+    });
+    document.getElementById("bloque-todas").hidden = false;
+  }
+
+  function fuentesListas() {
+    if (!document.fonts || !document.fonts.load) return Promise.resolve();
+    return Promise.all([
+      document.fonts.load('italic 900 142px "Fraunces"'),
+      document.fonts.load('900 40px "Fraunces"'),
+      document.fonts.load('800 40px "Bricolage Grotesque"'),
+      document.fonts.load('600 36px "Bricolage Grotesque"'),
+    ]).catch(function () {});
+  }
+  function fotosListas() {
+    return Promise.all(d.cands.map(function (c) {
+      if (!c.src) return null;
+      return new Promise(function (listo) {
+        var img = new Image();
+        img.onload = function () { c.img = img; listo(); };
+        img.onerror = function () { c.src = ""; listo(); };
+        img.src = c.src;
+      });
+    }));
+  }
+
+  function mostrar(s, fotos) {
+    d = normalizar(s || {}, fotos || {});
+    if (!d.cands.length) {
+      var e = document.getElementById("error");
+      e.textContent = "El resultado vino sin candidatas. Escribe " + COMANDO + " en Claude Code y vuelve a abrir esta página.";
+      e.hidden = false;
+      return;
+    }
+    h = horario();
+    llenarPaneles();
+    Promise.all([fuentesListas(), fotosListas()]).then(function () {
+      lugares = armarLugares();
+      var gana = d.corona ? cand(d.corona.n) : null;
+      lienzo.setAttribute("aria-label", "Miss Portada" + (gana ? ": la corona es para " + gana.apodo : ": la corona quedó desierta") +
+        (d.simp ? ", Miss Simpatía es " + cand(d.simp.n).apodo : "") + ", " + d.elimOrden.length + " eliminadas.");
+      document.getElementById("escenario").hidden = false;
+      reproducir();
+    });
+  }
+
+  document.getElementById("otra-vez").addEventListener("click", function () { if (d && lugares) reproducir(); });
+  document.getElementById("bajar").addEventListener("click", function () {
+    if (!d || !lugares) return;
+    var c = document.createElement("canvas"); c.width = W; c.height = H;
+    pintar(c.getContext("2d"), h.fin, lugares);
+    var nombre = "miss-portada-" + (d.cuenta || "perfil").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30) + ".png";
+    c.toBlob(function (blob) {
+      var archivo = new File([blob], nombre, { type: "image/png" });
+      // En el celular, compartir abre la hoja para guardarla o subirla a historias.
+      if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+        navigator.share({ files: [archivo], title: "Miss Portada" }).catch(function () {});
+        return;
+      }
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = nombre;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    }, "image/png");
+  });
+
+  // ---------- Los datos: datos.js y fotos.js, o el ejemplo si todavía no hay ----------
+  function cargar(src, listo) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.onload = function () { listo(true); };
+    s.onerror = function () { listo(false); };
+    document.head.appendChild(s);
+  }
+  function avisar(motivo) {
+    var p = document.getElementById("aviso-ejemplo"), code = document.createElement("code");
+    code.textContent = COMANDO;
+    p.textContent = motivo === "roto" ? "No pude leer datos.js. Esto es un ejemplo. Escribe " : "Esto es un ejemplo. Escribe ";
+    p.appendChild(code);
+    p.appendChild(document.createTextNode(" en Claude Code para ver el tuyo."));
+    p.hidden = false;
+  }
+  cargar("datos.js", function (hay) {
+    if (hay && window.MISS) {
+      cargar("fotos.js", function () { mostrar(window.MISS, window.FOTOS); });
+      return;
+    }
+    var motivo = hay ? "roto" : "falta";
+    window.MISS = undefined;
+    cargar("ejemplo.js", function (ok) {
+      if (ok && window.MISS) {
+        avisar(motivo);
+        cargar("ejemplo-fotos.js", function () { mostrar(window.MISS, window.FOTOS); });
+        return;
+      }
+      var e = document.getElementById("error");
+      e.textContent = "No encontré el resultado. Escribe " + COMANDO + " en Claude Code y vuelve a abrir esta página.";
+      e.hidden = false;
+    });
+  });
+})();
+</script>
+</body>
+</html>

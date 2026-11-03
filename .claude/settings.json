@@ -14,7 +14,11 @@
       "Edit(./tarot/datos.js)",
       "Edit(./velorio/datos.js)",
       "Edit(./chismes/**)",
-      "Edit(./chismoso/datos.js)"
+      "Edit(./chismoso/datos.js)",
+      "Edit(./concursos/**)",
+      "Edit(./miss-portada/datos.js)",
+      "Edit(./miss-portada/fotos.js)",
+      "Bash(base64:*)"
     ]
   }
 }

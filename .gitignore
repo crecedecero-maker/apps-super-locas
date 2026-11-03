@@ -7,8 +7,12 @@ velorios/*
 !velorios/.gitkeep
 chismes/*
 !chismes/.gitkeep
+concursos/*
+!concursos/.gitkeep
 juez/datos.js
 tarot/datos.js
 velorio/datos.js
 chismoso/datos.js
+miss-portada/datos.js
+miss-portada/fotos.js
 .claude/settings.local.json

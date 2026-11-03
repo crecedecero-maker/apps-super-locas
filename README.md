@@ -8,13 +8,14 @@ Las apps de la serie **«Día N creando apps súper locas sin saber programar»*
 | 2 | `/tarot` | Le pasas una captura de tu perfil y te tira tres cartas: lo que hiciste, lo que te frena y lo que tienes que hacer esta semana, cada una sacada de algo real de tu perfil. |
 | 3 | `/juez` | Juzga tu idea de negocio: te hace cinco preguntas, sale a investigar a tu competencia y lo que cobra, y dicta sentencia con pruebas. |
 | 4 | `/chismoso` | Le pasas el link de un video que explotó, tuyo o de otro, y lee los comentarios por ti: qué piden, de qué se quejan y qué preguntan, con cinco videos para hacer mañana. |
+| 5 | `/miss-portada` | Le pasas una captura de tu perfil y hace un concurso de belleza con tus portadas: elimina a las que no se leen en chiquito, le da la banda de Miss Simpatía a la de más vistas y corona a la mejor. |
 
 Cada una te deja un informe completo y una imagen para tus historias.
 
 ## Qué necesitas
 
 - **Claude Code**, con una cuenta de Claude (Pro o Max) o una clave de API. Si no lo tienes, está en [claude.com/claude-code](https://claude.com/claude-code).
-- Para el velorio, **yt-dlp** (baja el video del link) y **ffmpeg** (lo mira por dentro). Para el chismoso, solo **yt-dlp** (baja los comentarios). Si no los tienes, la app te ofrece instalarlos.
+- Para el velorio, **yt-dlp** (baja el video del link) y **ffmpeg** (lo mira por dentro). Para el chismoso, solo **yt-dlp** (baja los comentarios). Para Miss Portada, **ffmpeg** (recorta tus portadas de la captura para subirlas al escenario; sin él, el concurso sale igual, sin las fotos). Si no los tienes, la app te ofrece instalarlos.
 
 ## Cómo instalarlas
 
@@ -22,7 +23,7 @@ Cada una te deja un informe completo y una imagen para tus historias.
 2. Abre la carpeta en Claude Code:
    - en la app de escritorio, elige la carpeta `apps-super-locas`;
    - en la terminal, entra a la carpeta y escribe `claude`.
-3. Escribe el comando de la app: `/velorio`, `/tarot`, `/juez` o `/chismoso`. También puedes pedirlo con tus palabras, por ejemplo «quiero saber por qué murió mi reel».
+3. Escribe el comando de la app: `/velorio`, `/tarot`, `/juez`, `/chismoso` o `/miss-portada`. También puedes pedirlo con tus palabras, por ejemplo «quiero saber por qué murió mi reel».
 
 La primera vez, Claude Code te pregunta si confías en la carpeta: dile que sí.
 
@@ -56,9 +57,16 @@ La primera vez, Claude Code te pregunta si confías en la carpeta: dile que sí.
 3. Te cuenta el chisme con pruebas: lo que piden, de qué se quejan, lo que preguntan y lo que les encantó, cada cosa con un comentario real y cuántos dicen lo mismo. Nunca muestra quién comentó.
 4. Te da cinco videos para hacer mañana, cada uno con el comentario que lo pidió, y te deja el acta en `chismes/` y la tapa de revista para historias.
 
+### Día 5 · Miss Portada (`/miss-portada`)
+
+1. Le pasas una captura de tu perfil donde se vean tus portadas: la mejor es la de la pestaña de reels, o la de tu perfil de TikTok, porque ahí se ven las vistas. Si arrastras el archivo a la ventana de Claude Code, tus portadas suben de verdad al escenario.
+2. Las mira al tamaño de la grilla, que es como las ve la gente, y elimina a las que no se leen en chiquito: letra chica o fina, más de ocho palabras, poco contraste o texto tapado.
+3. Le da la banda de Miss Simpatía a la de más vistas, aunque sea fea, y corona a la que mejor se entiende en un segundo y más frena el pulgar.
+4. Te deja el acta en `concursos/`, la coronación animada con la imagen para historias, un arreglo para cada eliminada y la receta de tu próxima portada.
+
 ## Cuánto gasta
 
-Usan tu cuenta de Claude. El juez hace entre 6 y 15 búsquedas en internet por juicio, el velorio mira hasta 30 cuadros del video, el tarot lee una o dos capturas y el chismoso lee hasta 500 comentarios.
+Usan tu cuenta de Claude. El juez hace entre 6 y 15 búsquedas en internet por juicio, el velorio mira hasta 30 cuadros del video, el tarot lee una o dos capturas, el chismoso lee hasta 500 comentarios y Miss Portada mira una captura y sus recortes.
 
 ## Privacidad
 
