@@ -9,10 +9,13 @@ chismes/*
 !chismes/.gitkeep
 concursos/*
 !concursos/.gitkeep
+cumples/*
+!cumples/.gitkeep
 juez/datos.js
 tarot/datos.js
 velorio/datos.js
 chismoso/datos.js
 miss-portada/datos.js
 miss-portada/fotos.js
+fiesta/datos.js
 .claude/settings.local.json

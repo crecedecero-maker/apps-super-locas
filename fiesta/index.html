@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El cumpleaños de tu mejor reel</title>
+<meta name="description" content="Por qué vivió tu mejor reel: el segundo en que enganchó, las razones con pruebas y tres videos para repetirlo.">
+<meta name="theme-color" content="#2e1fb8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,500;1,9..144,900&display=swap">
+<style>
+/* Una sola columna para el celular. La torta es un canvas de 1080x1920: las velitas se
+   prenden una vez y queda quieta en la imagen que se baja para historias.
+   El resultado sale de datos.js, que escribe /fiesta; si no está, de ejemplo.js. */
+:root {
+  --azul: #2e1fb8;
+  --azul-oscuro: #1a1170;
+  --rosa: #ff2e88;
+  --turquesa: #22d3ee;
+  --amarillo: #ffd23f;
+  --lima: #a3e635;
+  --papel: #fff8f0;
+  --tinta: #170b3b;
+  --tinta-suave: #5b4f86;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  background: var(--azul);
+  color: #fff;
+  font: 500 16px/1.5 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+main {
+  max-width: 440px; margin: 0 auto;
+  padding: 36px max(18px, env(safe-area-inset-left)) 48px max(18px, env(safe-area-inset-right));
+  display: grid; gap: 22px;
+}
+[hidden] { display: none !important; }
+.serie { font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--amarillo); margin: 0; font-weight: 800; }
+h1 { font: italic 900 clamp(2.3rem, 11.5vw, 3.1rem)/0.98 "Fraunces", Georgia, serif; margin: 0; letter-spacing: -0.02em; }
+.bajada { margin: 0; font-size: 1.08rem; font-weight: 600; }
+.aviso-ejemplo {
+  margin: 0; background: var(--amarillo); color: var(--tinta);
+  font-weight: 700; border-radius: 16px; padding: 12px 16px;
+}
+.aviso-ejemplo code { font: 800 1em "Bricolage Grotesque", system-ui, sans-serif; background: rgba(23, 11, 59, 0.1); padding: 1px 6px; border-radius: 6px; }
+.escenario { display: grid; gap: 12px; }
+.escenario canvas {
+  width: 100%; height: auto; display: block; aspect-ratio: 9 / 16;
+  border-radius: 22px; background: var(--azul-oscuro);
+  box-shadow: 0 18px 40px rgba(10, 0, 50, 0.5);
+}
+.botones { display: grid; gap: 10px; }
+button {
+  font: 800 1.05rem "Bricolage Grotesque", system-ui, sans-serif;
+  border: 0; border-radius: 999px; padding: 15px 22px; min-height: 52px; cursor: pointer;
+  background: var(--rosa); color: #fff;
+}
+button.secundario { background: transparent; color: #fff; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6); }
+button:active { transform: translateY(1px); }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--amarillo); outline-offset: 3px; }
+.panel {
+  background: var(--papel); color: var(--tinta);
+  border-radius: 22px; padding: 20px;
+  display: grid; gap: 14px;
+  box-shadow: 0 18px 40px rgba(10, 0, 50, 0.35);
+}
+.panel h2 { margin: 0; font: 800 0.8rem/1.2 "Bricolage Grotesque", system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: #c8125f; }
+.panel p { margin: 0; }
+.brindis { font: italic 900 1.45rem/1.2 "Fraunces", Georgia, serif; }
+.numeros { display: flex; flex-wrap: wrap; gap: 8px; }
+.numeros span { font-weight: 800; font-size: 0.88rem; background: #fff; border: 2px solid #ece4ff; border-radius: 999px; padding: 4px 12px; }
+.numeros span.grande { background: var(--amarillo); border-color: var(--amarillo); }
+.razon { font: 900 1.2rem/1.3 "Fraunces", Georgia, serif; }
+.lista { margin: 0; padding-left: 1.3em; display: grid; gap: 10px; }
+.lista li::marker { color: var(--rosa); font-weight: 800; }
+.evidencia { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.evidencia li { display: grid; grid-template-columns: 58px 1fr; gap: 10px; align-items: start; }
+.evidencia .seg { font-weight: 800; background: var(--turquesa); color: var(--tinta); border-radius: 10px; text-align: center; padding: 2px 0; }
+.deseos { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; counter-reset: deseo; }
+.deseos li { background: #fff; border: 2px solid #ece4ff; border-radius: 16px; padding: 12px 14px 12px 52px; position: relative; display: grid; gap: 4px; counter-increment: deseo; }
+.deseos li::before {
+  content: counter(deseo); position: absolute; left: 12px; top: 12px; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--rosa); color: #fff; font-weight: 800; display: grid; place-items: center; font-size: 0.95rem;
+}
+.deseos .titulo { font-weight: 800; }
+.deseos .gancho { font: italic 500 1rem/1.35 "Fraunces", Georgia, serif; color: var(--tinta); }
+.deseos .porque { color: var(--tinta-suave); font-size: 0.92rem; }
+.vacio { color: var(--tinta-suave); font-weight: 600; }
+.error { margin: 0; background: #fff; color: #c8125f; font-weight: 700; border-radius: 16px; padding: 14px 16px; }
+footer { text-align: center; color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; }
+footer a { color: #fff; font-weight: 800; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="serie">Apps súper locas · Día 6</p>
+    <h1>El cumpleaños de tu mejor reel</h1>
+    <p class="bajada">El velorio te decía de qué murió tu peor reel. Esta te dice por qué vivió el mejor.</p>
+  </header>
+
+  <p class="aviso-ejemplo" id="aviso-ejemplo" hidden></p>
+  <p class="error" id="error" role="alert" hidden></p>
+
+  <section class="escenario" id="escenario" hidden>
+    <canvas id="lienzo" width="1080" height="1920" role="img"></canvas>
+    <div class="botones">
+      <button type="button" id="bajar">Bajar para historias</button>
+      <button type="button" id="otra-vez" class="secundario">Prender las velitas otra vez</button>
+    </div>
+  </section>
+
+  <section class="panel" id="bloque-brindis" hidden>
+    <h2>El brindis</h2>
+    <p class="brindis" id="brindis"></p>
+    <div class="numeros" id="numeros"></div>
+  </section>
+
+  <section class="panel" id="bloque-razones" hidden>
+    <h2>Por qué vivió</h2>
+    <p class="razon" id="razon"></p>
+    <ul class="lista" id="razones"></ul>
+  </section>
+
+  <section class="panel" id="bloque-evidencia" hidden>
+    <h2 id="titulo-evidencia">En qué segundo enganchó</h2>
+    <ul class="evidencia" id="evidencia"></ul>
+  </section>
+
+  <section class="panel" id="bloque-casi" hidden>
+    <h2>Lo que casi lo arruina</h2>
+    <p id="casi"></p>
+  </section>
+
+  <section class="panel" id="bloque-deseos" hidden>
+    <h2>Tres deseos: videos para repetirlo</h2>
+    <ol class="deseos" id="deseos"></ol>
+  </section>
+
+  <footer>Hecha con Claude Code por alguien que no sabe programar · <a href="https://www.instagram.com/crece_de_cero/">@crece_de_cero</a></footer>
+</main>
+
+<script>
+(function () {
+  var COMANDO = "/fiesta";
+  var W = 1080, H = 1920;
+  var COLORES = ["#ff2e88", "#ffd23f", "#22d3ee", "#ffffff", "#a3e635", "#ff7a3d"];
+  var d = null, h = null, plan = null, animacion = null;
+
+  // ---------- Datos ----------
+  function texto(v) { return v === null || v === undefined ? "" : String(v).trim(); }
+  function numero(v) { var n = Number(v); return v !== null && v !== "" && isFinite(n) && n >= 0 ? n : null; }
+  function entero(v) { var n = numero(v); return n === null ? null : Math.round(n); }
+  function fechaLinda(f) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto(f));
+    return m ? Number(m[3]) + "/" + Number(m[2]) + "/" + m[1] : "";
+  }
+  function miles(n) { return n === null ? "" : n.toLocaleString("es-AR"); }
+  function decimal(n) { return n === null ? "" : n.toLocaleString("es-AR", { maximumFractionDigits: 1 }); }
+  // El número de las velitas: hasta 9.999 va entero; después, con K o M.
+  function velitas(n) {
+    if (n === null) return "?";
+    if (n < 10000) return String(n);
+    if (n < 1000000) return Math.round(n / 1000) + "K";
+    return (Math.round(n / 100000) / 10).toLocaleString("es-AR") + "M";
+  }
+
+  function normalizar(s) {
+    return {
+      fecha: texto(s.fecha), plataforma: texto(s.plataforma), reel: texto(s.reel),
+      vistas: entero(s.vistas), megusta: entero(s.megusta), comentarios: entero(s.comentarios),
+      compartidos: entero(s.compartidos), guardados: entero(s.guardados),
+      duracion: numero(s.duracion), mediana: entero(s.mediana), segundo: numero(s.segundo),
+      razon: texto(s.razon),
+      razones: (Array.isArray(s.razones) ? s.razones : []).map(texto).filter(Boolean).slice(0, 3),
+      casi: texto(s.casi), brindis: texto(s.brindis),
+      evidencia: (Array.isArray(s.evidencia) ? s.evidencia : []).map(function (e) {
+        return { segundo: numero(e && e.segundo), que: texto(e && e.que) };
+      }).filter(function (e) { return e.que; }),
+      deseos: (Array.isArray(s.deseos) ? s.deseos : []).map(function (x) {
+        return { titulo: texto(x && x.titulo), gancho: texto(x && x.gancho), porque: texto(x && x.porque) };
+      }).filter(function (x) { return x.titulo; }).slice(0, 3),
+    };
+  }
+
+  // ---------- Movimiento ----------
+  function limitar(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function avance(t, desde, dura) { return limitar((t - desde) / dura, 0, 1); }
+  function salida(p) { return 1 - Math.pow(1 - p, 3); }
+  function rebote(p) { var c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); }
+  function caida(p) {
+    var n1 = 7.5625, d1 = 2.75;
+    if (p < 1 / d1) return n1 * p * p;
+    if (p < 2 / d1) { p -= 1.5 / d1; return n1 * p * p + 0.75; }
+    if (p < 2.5 / d1) { p -= 2.25 / d1; return n1 * p * p + 0.9375; }
+    p -= 2.625 / d1; return n1 * p * p + 0.984375;
+  }
+  function mezcla(a, b, p) { return a + (b - a) * p; }
+  function azar(semilla) {
+    return function () {
+      semilla |= 0; semilla = semilla + 0x6D2B79F5 | 0;
+      var t = Math.imul(semilla ^ semilla >>> 15, 1 | semilla);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  // Los momentos de la fiesta, en segundos.
+  function horario() {
+    var x = {}, n = velitas(d.vistas).length;
+    x.banderines = 0; x.titulo = 0.3; x.torta = 0.8;
+    x.velas = 1.8; x.velaPaso = 0.14;
+    x.fuego = x.velas + 0.5; x.fuegoPaso = 0.14;
+    x.cuenta = x.fuego + n * x.fuegoPaso;
+    x.globos = x.cuenta + 0.1;
+    x.confeti = x.cuenta + 1.3;
+    x.razones = x.confeti + 0.3;
+    x.deseos = x.razones + 0.8;
+    x.fin = x.confeti + 3;
+    return x;
+  }
+
+  // ---------- Texto ----------
+  function renglones(ctx, contenido, ancho, max) {
+    var palabras = texto(contenido).split(/\s+/).filter(Boolean), lineas = [], linea = "";
+    palabras.forEach(function (p) {
+      var prueba = linea ? linea + " " + p : p;
+      if (!linea || ctx.measureText(prueba).width <= ancho) linea = prueba;
+      else { lineas.push(linea); linea = p; }
+    });
+    if (linea) lineas.push(linea);
+    if (lineas.length > max) {
+      lineas = lineas.slice(0, max);
+      var ultima = lineas[max - 1];
+      while (ultima && ctx.measureText(ultima + "…").width > ancho) ultima = ultima.replace(/\s*\S+$/, "");
+      lineas[max - 1] = ultima + "…";
+    }
+    return lineas;
+  }
+  function marco(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+
+  // Las dos tarjetas de abajo (por qué vivió y los tres deseos), medidas antes de dibujar:
+  // si no entran, se achican parejo.
+  function armarPlan() {
+    var ctx = document.createElement("canvas").getContext("2d"), p = {};
+    ctx.font = '800 38px "Bricolage Grotesque"';
+    p.razon = renglones(ctx, d.razon, 860, 3);
+    ctx.font = '600 31px "Bricolage Grotesque"';
+    p.razones = d.razones.map(function (r) { return renglones(ctx, r, 820, 2); });
+    p.altoRazones = 76 + p.razon.length * 46 + 14 + p.razones.reduce(function (s, l) { return s + l.length * 40 + 12; }, 0) + 22;
+    ctx.font = '800 31px "Bricolage Grotesque"';
+    p.deseos = d.deseos.map(function (x) { return renglones(ctx, x.titulo, 820, 2); });
+    p.altoDeseos = p.deseos.length ? 76 + p.deseos.reduce(function (s, l) { return s + l.length * 40 + 16; }, 0) + 14 : 0;
+    p.arriba = 1188; p.libre = 1838 - p.arriba;
+    var total = p.altoRazones + (p.altoDeseos ? 24 + p.altoDeseos : 0);
+    p.escala = total > p.libre ? p.libre / total : 1;
+    return p;
+  }
+
+  // ---------- Dibujo ----------
+  function fondo(ctx, t) {
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#1a1170"); g.addColorStop(0.5, "#2e1fb8"); g.addColorStop(1, "#5b21b6");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    var luz = ctx.createRadialGradient(540, 820, 40, 540, 820, 700);
+    luz.addColorStop(0, "rgba(255, 210, 63, 0.28)"); luz.addColorStop(1, "rgba(255, 210, 63, 0)");
+    ctx.fillStyle = luz; ctx.fillRect(0, 0, W, H);
+    // Puntitos de colores quietos, como papel picado en el piso.
+    var rnd = azar(11);
+    for (var i = 0; i < 70; i++) {
+      var x = rnd() * W, y = 420 + rnd() * 1500, r = 3 + rnd() * 5;
+      ctx.globalAlpha = 0.18 + 0.2 * (0.5 + 0.5 * Math.sin(t * 2 + i));
+      ctx.fillStyle = COLORES[i % COLORES.length];
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function banderines(ctx, t) {
+    var n = 13, paso = W / (n - 1);
+    ctx.save();
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.85)"; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(-10, 40); ctx.quadraticCurveTo(540, 150, 1090, 40); ctx.stroke();
+    for (var i = 0; i < n; i++) {
+      var p = avance(t, h.banderines + i * 0.04, 0.5);
+      if (p <= 0) continue;
+      var x = i * paso, u = x / W, y = (1 - u) * (1 - u) * 40 + 2 * (1 - u) * u * 150 + u * u * 40;
+      var giro = (1 - salida(p)) * -1.2 + Math.sin(t * 2.2 + i) * 0.04;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(giro);
+      ctx.beginPath(); ctx.moveTo(-34, 0); ctx.lineTo(34, 0); ctx.lineTo(0, 74); ctx.closePath();
+      ctx.fillStyle = COLORES[i % 5]; ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function titulo(ctx, t) {
+    var p = avance(t, h.titulo, 0.6);
+    if (p <= 0) return;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, p * 2);
+    ctx.translate(540, 300); var s = rebote(p); ctx.scale(s, s); ctx.translate(-540, -300);
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#ffd23f"; ctx.font = '800 30px "Bricolage Grotesque"';
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "5px";
+    ctx.fillText("APPS SÚPER LOCAS · DÍA 6", 540, 214);
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+    ctx.shadowColor = "#ff2e88"; ctx.shadowBlur = 30;
+    ctx.fillStyle = "#ffffff"; ctx.font = 'italic 900 150px "Fraunces"';
+    ctx.fillText("¡Feliz cumple!", 540, 350);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.88)"; ctx.font = '600 32px "Bricolage Grotesque"';
+    var linea = [d.reel ? "«" + d.reel + "»" : "", d.plataforma, fechaLinda(d.fecha)].filter(Boolean).join(" · ");
+    ctx.fillText(renglones(ctx, linea, 960, 1)[0] || "", 540, 412);
+    ctx.restore();
+  }
+
+  function globo(ctx, x, y, r, color, t, fase) {
+    var vaiven = Math.sin(t * 1.6 + fase) * 10;
+    ctx.save(); ctx.translate(x + vaiven, y);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.7)"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, r * 1.18);
+    ctx.bezierCurveTo(-r * 0.4, r * 1.9, r * 0.4, r * 2.5, -vaiven * 0.6, r * 3.4); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, 0, r, r * 1.18, 0, 0, Math.PI * 2);
+    var g = ctx.createRadialGradient(-r * 0.35, -r * 0.45, r * 0.1, 0, 0, r * 1.2);
+    g.addColorStop(0, "rgba(255, 255, 255, 0.75)"); g.addColorStop(0.25, color); g.addColorStop(1, color);
+    ctx.fillStyle = g; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-r * 0.12, r * 1.16); ctx.lineTo(r * 0.12, r * 1.16); ctx.lineTo(0, r * 1.3); ctx.closePath();
+    ctx.fillStyle = color; ctx.fill();
+    ctx.restore();
+  }
+
+  function globos(ctx, t) {
+    var p = avance(t, h.globos, 2.0);
+    if (p <= 0) return;
+    var sube = (1 - salida(p)) * 1300;
+    [[120, 640, 70, "#ff2e88", 0], [210, 500, 56, "#ffd23f", 1.3], [960, 600, 72, "#22d3ee", 2.1], [868, 470, 54, "#a3e635", 0.6]]
+      .forEach(function (b) { globo(ctx, b[0], b[1] + sube, b[2], b[3], t, b[4]); });
+  }
+
+  // La torta: dos pisos con glaseado que chorrea y grageas, sobre un plato.
+  function torta(ctx, t) {
+    var p = avance(t, h.torta, 0.9);
+    if (p <= 0) return;
+    var baja = (1 - caida(p)) * -900;
+    ctx.save(); ctx.translate(0, baja);
+    ctx.fillStyle = "rgba(10, 0, 40, 0.35)"; ctx.beginPath(); ctx.ellipse(540, 1024, 400, 44, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.ellipse(540, 1008, 380, 40, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#22d3ee"; ctx.beginPath(); ctx.ellipse(540, 1004, 350, 30, 0, 0, Math.PI * 2); ctx.fill();
+    piso(ctx, 260, 830, 560, 170, "#ffe2b8", "#ff6fb5", 21);
+    piso(ctx, 345, 712, 390, 124, "#ffd0e6", "#ffffff", 37);
+    ctx.restore();
+  }
+  function piso(ctx, x, y, w, alto, masa, glaseado, semilla) {
+    var g = ctx.createLinearGradient(x, 0, x + w, 0);
+    g.addColorStop(0, shade(masa, -0.12)); g.addColorStop(0.5, masa); g.addColorStop(1, shade(masa, -0.16));
+    marco(ctx, x, y, w, alto, 18); ctx.fillStyle = g; ctx.fill();
+    // El glaseado de arriba, con gotas que chorrean.
+    var rnd = azar(semilla);
+    ctx.fillStyle = glaseado; ctx.beginPath(); ctx.moveTo(x, y + 14);
+    ctx.arcTo(x, y, x + 18, y, 18); ctx.lineTo(x + w - 18, y); ctx.arcTo(x + w, y, x + w, y + 18, 18);
+    var gotas = 7;
+    for (var i = gotas; i >= 0; i--) {
+      var gx = x + (i / gotas) * w, largo = 26 + rnd() * 40;
+      ctx.lineTo(gx + 14, y + 30);
+      ctx.quadraticCurveTo(gx + 16, y + largo, gx, y + largo + 8);
+      ctx.quadraticCurveTo(gx - 16, y + largo, gx - 14, y + 30);
+    }
+    ctx.closePath(); ctx.fill();
+    // Grageas.
+    for (var k = 0; k < 18; k++) {
+      var sx = x + 24 + rnd() * (w - 48), sy = y + 60 + rnd() * (alto - 80);
+      ctx.save(); ctx.translate(sx, sy); ctx.rotate(rnd() * 3);
+      ctx.fillStyle = COLORES[k % COLORES.length === 3 ? 0 : k % COLORES.length];
+      marco(ctx, -9, -3, 18, 6, 3); ctx.fill(); ctx.restore();
+    }
+  }
+  function shade(hex, f) {
+    var n = parseInt(hex.slice(1), 16), r = n >> 16, g = n >> 8 & 255, b = n & 255;
+    var m = function (c) { return Math.round(limitar(f < 0 ? c * (1 + f) : c + (255 - c) * f, 0, 255)); };
+    return "rgb(" + m(r) + "," + m(g) + "," + m(b) + ")";
+  }
+
+  // Las velitas con forma de número: cada cifra de las vistas es una vela con rayas.
+  function velas(ctx, t) {
+    var cifras = velitas(d.vistas).split(""), tam = cifras.length > 3 ? 150 : 176;
+    ctx.save();
+    ctx.font = "800 " + tam + 'px "Bricolage Grotesque"';
+    var anchos = cifras.map(function (c) { return ctx.measureText(c).width; }), sep = 12;
+    var total = anchos.reduce(function (s, w) { return s + w; }, 0) + sep * (cifras.length - 1);
+    var x = 540 - total / 2, base = 724;
+    var baja = (1 - caida(avance(t, h.torta, 0.9))) * -900;
+    cifras.forEach(function (c, i) {
+      var p = avance(t, h.velas + i * h.velaPaso, 0.45), w = anchos[i];
+      if (p > 0) {
+        var cx = x + w / 2, s = p < 1 ? rebote(p) : 1;
+        ctx.save(); ctx.translate(cx, base + baja); ctx.scale(s, s);
+        ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+        ctx.lineJoin = "round"; ctx.lineWidth = 12; ctx.strokeStyle = "#7c1d6f"; ctx.strokeText(c, 0, 0);
+        // La cifra se rellena con rayas amarillas y blancas, como una vela de verdad.
+        ctx.fillStyle = rayas(ctx); ctx.fillText(c, 0, 0);
+        // La mecha y la llama.
+        var arriba = -tam * 0.74;
+        ctx.strokeStyle = "#3b2a1a"; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, arriba); ctx.lineTo(0, arriba - 20); ctx.stroke();
+        var pf = avance(t, h.fuego + i * h.fuegoPaso, 0.35);
+        if (pf > 0) llama(ctx, 0, arriba - 18, salida(pf), t, i);
+        ctx.restore();
+      }
+      x += w + sep;
+    });
+    ctx.restore();
+  }
+  // Un patrón por lienzo: el de la página y el de la imagen que se baja son lienzos distintos.
+  var patrones = new WeakMap();
+  function rayas(ctx) {
+    if (patrones.has(ctx)) return patrones.get(ctx);
+    var c = document.createElement("canvas"), lado = 36;
+    c.width = lado; c.height = lado;
+    var x = c.getContext("2d");
+    x.fillStyle = "#ffd23f"; x.fillRect(0, 0, lado, lado);
+    x.strokeStyle = "#fff7d6"; x.lineWidth = 10;
+    [-lado, 0, lado].forEach(function (o) { x.beginPath(); x.moveTo(o, lado); x.lineTo(o + lado, 0); x.stroke(); });
+    var patron = ctx.createPattern(c, "repeat");
+    patrones.set(ctx, patron);
+    return patron;
+  }
+  function llama(ctx, x, y, p, t, i) {
+    var parpadeo = 1 + 0.09 * Math.sin(t * 13 + i * 2) + 0.05 * Math.sin(t * 23 + i);
+    var alto = 54 * p * parpadeo, ancho = 20 * p, inclina = Math.sin(t * 5 + i) * 4;
+    ctx.save();
+    var halo = ctx.createRadialGradient(x, y - alto * 0.4, 2, x, y - alto * 0.4, 70 * p);
+    halo.addColorStop(0, "rgba(255, 220, 120, 0.55)"); halo.addColorStop(1, "rgba(255, 220, 120, 0)");
+    ctx.fillStyle = halo; ctx.fillRect(x - 80, y - alto - 80, 160, 170);
+    ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.bezierCurveTo(x - ancho, y - alto * 0.25, x - ancho * 0.6, y - alto * 0.75, x + inclina, y - alto);
+    ctx.bezierCurveTo(x + ancho * 0.6, y - alto * 0.75, x + ancho, y - alto * 0.25, x, y);
+    var g = ctx.createLinearGradient(x, y, x, y - alto);
+    g.addColorStop(0, "#ff7a3d"); g.addColorStop(0.5, "#ffb020"); g.addColorStop(1, "#fff3b0");
+    ctx.fillStyle = g; ctx.fill();
+    ctx.restore();
+  }
+
+  function cuenta(ctx, t) {
+    var p = avance(t, h.cuenta, 1.3);
+    if (p <= 0 || d.vistas === null) return;
+    var n = Math.round(d.vistas * salida(p));
+    ctx.save(); ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.globalAlpha = Math.min(1, p * 3);
+    ctx.fillStyle = "#ffffff"; ctx.font = 'italic 900 92px "Fraunces"';
+    ctx.shadowColor = "rgba(10, 0, 40, 0.5)"; ctx.shadowBlur = 18;
+    ctx.fillText(miles(n) + " vistas", 540, 1122);
+    ctx.shadowBlur = 0;
+    var extra = [];
+    if (d.mediana) {
+      var veces = d.vistas / d.mediana;
+      extra.push(veces >= 1.95 ? decimal(Math.round(veces * 10) / 10) + " veces lo que suelen tener tus videos" : "más que la mediana de tus videos (" + miles(d.mediana) + ")");
+    } else {
+      if (d.megusta !== null) extra.push(miles(d.megusta) + " me gusta");
+      if (d.guardados) extra.push(miles(d.guardados) + (d.guardados === 1 ? " guardado" : " guardados"));
+      if (d.compartidos) extra.push(miles(d.compartidos) + " compartidos");
+    }
+    if (extra.length) {
+      ctx.fillStyle = "#ffd23f"; ctx.font = '800 32px "Bricolage Grotesque"';
+      ctx.fillText(extra.join(" · "), 540, 1166);
+    }
+    ctx.restore();
+  }
+
+  function tarjetas(ctx, t) {
+    var pr = avance(t, h.razones, 0.7), pd = avance(t, h.deseos, 0.7);
+    if (pr <= 0) return;
+    ctx.save();
+    ctx.translate(540 * (1 - plan.escala), plan.arriba); ctx.scale(plan.escala, plan.escala);
+    // Por qué vivió.
+    ctx.save(); ctx.globalAlpha = pr; ctx.translate(0, (1 - salida(pr)) * 80);
+    marco(ctx, 60, 0, 960, plan.altoRazones, 26); ctx.fillStyle = "#fff8f0"; ctx.fill();
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#c8125f"; ctx.font = '800 27px "Bricolage Grotesque"';
+    ctx.fillText("POR QUÉ VIVIÓ" + (d.segundo !== null ? " · ENGANCHÓ EN EL SEGUNDO " + decimal(d.segundo) : ""), 100, 54);
+    var y = 106;
+    ctx.fillStyle = "#170b3b"; ctx.font = '800 38px "Bricolage Grotesque"';
+    plan.razon.forEach(function (l) { ctx.fillText(l, 100, y); y += 46; });
+    y += 14;
+    ctx.font = '600 31px "Bricolage Grotesque"';
+    plan.razones.forEach(function (lineas, i) {
+      ctx.fillStyle = COLORES[[0, 2, 4][i]]; ctx.beginPath(); ctx.arc(112, y - 10, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#3d3166";
+      lineas.forEach(function (l) { ctx.fillText(l, 136, y); y += 40; });
+      y += 12;
+    });
+    ctx.restore();
+    // Los tres deseos.
+    if (plan.altoDeseos && pd > 0) {
+      var yd = plan.altoRazones + 24;
+      ctx.save(); ctx.globalAlpha = pd; ctx.translate(0, (1 - salida(pd)) * 80);
+      marco(ctx, 60, yd, 960, plan.altoDeseos, 26); ctx.fillStyle = "#ff2e88"; ctx.fill();
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = "#ffd23f"; ctx.font = '800 27px "Bricolage Grotesque"';
+      ctx.fillText("TRES DESEOS: VIDEOS PARA REPETIRLO", 100, yd + 54);
+      var yy = yd + 104;
+      plan.deseos.forEach(function (lineas, i) {
+        ctx.fillStyle = "#ffffff"; ctx.font = '900 34px "Fraunces"'; ctx.fillText(String(i + 1), 100, yy);
+        ctx.font = '800 31px "Bricolage Grotesque"';
+        lineas.forEach(function (l) { ctx.fillText(l, 140, yy); yy += 40; });
+        yy += 16;
+      });
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function confeti(ctx, t) {
+    var tau = t - h.confeti;
+    if (tau < 0 || tau > 3) return;
+    var rnd = azar(53), alfa = tau < 2.3 ? 1 : 1 - (tau - 2.3) / 0.7;
+    ctx.save(); ctx.globalAlpha *= alfa;
+    for (var i = 0; i < 170; i++) {
+      var vx = (rnd() - 0.5) * 1700, vy = -500 - rnd() * 1200, giro = (rnd() - 0.5) * 14;
+      var tam = 10 + rnd() * 14, c = COLORES[Math.floor(rnd() * COLORES.length)];
+      var x = 540 + (rnd() - 0.5) * 200 + vx * tau, y = 640 + vy * tau + 0.5 * 1700 * tau * tau;
+      if (y > H + 40) continue;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(giro * tau + i);
+      ctx.fillStyle = c; ctx.fillRect(-tam / 2, -tam * 0.3, tam, tam * 0.6);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function pintar(ctx, t) {
+    fondo(ctx, t);
+    globos(ctx, t);
+    banderines(ctx, t);
+    titulo(ctx, t);
+    torta(ctx, t);
+    velas(ctx, t);
+    cuenta(ctx, t);
+    tarjetas(ctx, t);
+    confeti(ctx, t);
+    ctx.save();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.75)"; ctx.font = '700 26px "Bricolage Grotesque"'; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.globalAlpha = avance(t, h.razones, 0.6);
+    ctx.fillText("@crece_de_cero · hecha con Claude Code", 540, 1885);
+    ctx.restore();
+  }
+
+  // ---------- La página ----------
+  var lienzo = document.getElementById("lienzo"), ctxLienzo = lienzo.getContext("2d");
+  function detener() { if (animacion) cancelAnimationFrame(animacion); animacion = null; }
+  function cuadro(t) { ctxLienzo.clearRect(0, 0, W, H); pintar(ctxLienzo, t); }
+  function reproducir() {
+    detener();
+    var quieto = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (quieto) { cuadro(h.fin); return; }
+    var inicio = null;
+    function paso(ahora) {
+      if (inicio === null) inicio = ahora;
+      var t = (ahora - inicio) / 1000;
+      cuadro(Math.min(t, h.fin));
+      if (t < h.fin) animacion = requestAnimationFrame(paso); else animacion = null;
+    }
+    animacion = requestAnimationFrame(paso);
+  }
+  // Para grabar la fiesta cuadro por cuadro: fiestaCuadro(segundos) devuelve la duración.
+  window.fiestaCuadro = function (t) { detener(); cuadro(Math.max(0, Math.min(t, h.fin))); return h.fin; };
+
+  function li(texto_) { var e = document.createElement("li"); e.textContent = texto_; return e; }
+  function llenarPaneles() {
+    if (d.brindis) document.getElementById("brindis").textContent = d.brindis;
+    var nums = document.getElementById("numeros"); nums.textContent = "";
+    [[d.vistas, " vista", true], [d.megusta, " me gusta"], [d.comentarios, " comentario"], [d.compartidos, " compartido"], [d.guardados, " guardado"]]
+      .forEach(function (x) {
+        if (x[0] === null) return;
+        var s = document.createElement("span"); if (x[2]) s.className = "grande";
+        // «1 guardado», «0 guardados»: el plural va solo cuando no es uno («me gusta» no cambia).
+        s.textContent = miles(x[0]) + x[1] + (x[0] !== 1 && x[1] !== " me gusta" ? "s" : "");
+        nums.appendChild(s);
+      });
+    if (d.vistas && d.megusta !== null) { var s2 = document.createElement("span"); s2.textContent = decimal(Math.round(d.megusta * 1000 / d.vistas) / 10) + " me gusta cada 100 vistas"; nums.appendChild(s2); }
+    if (d.mediana) { var s3 = document.createElement("span"); s3.textContent = "tus videos suelen tener " + miles(d.mediana); nums.appendChild(s3); }
+    if (d.duracion !== null) { var s4 = document.createElement("span"); s4.textContent = decimal(d.duracion) + " s"; nums.appendChild(s4); }
+    if (d.brindis || nums.childNodes.length) document.getElementById("bloque-brindis").hidden = false;
+
+    if (d.razon) {
+      document.getElementById("razon").textContent = d.razon;
+      var ul = document.getElementById("razones"); ul.textContent = "";
+      d.razones.forEach(function (r) { ul.appendChild(li(r)); });
+      document.getElementById("bloque-razones").hidden = false;
+    }
+    if (d.evidencia.length) {
+      if (d.segundo !== null) document.getElementById("titulo-evidencia").textContent = "Enganchó en el segundo " + decimal(d.segundo);
+      var ev = document.getElementById("evidencia"); ev.textContent = "";
+      d.evidencia.forEach(function (e) {
+        var item = document.createElement("li"), seg = document.createElement("span"), que = document.createElement("span");
+        seg.className = "seg"; seg.textContent = e.segundo !== null ? decimal(e.segundo) + " s" : "—";
+        que.textContent = e.que; item.appendChild(seg); item.appendChild(que); ev.appendChild(item);
+      });
+      document.getElementById("bloque-evidencia").hidden = false;
+    }
+    if (d.casi) { document.getElementById("casi").textContent = d.casi; document.getElementById("bloque-casi").hidden = false; }
+    if (d.deseos.length) {
+      var ol = document.getElementById("deseos"); ol.textContent = "";
+      d.deseos.forEach(function (x) {
+        var item = document.createElement("li");
+        [["titulo", x.titulo], ["gancho", x.gancho ? "«" + x.gancho + "»" : ""], ["porque", x.porque]].forEach(function (p) {
+          if (!p[1]) return; var s = document.createElement("span"); s.className = p[0]; s.textContent = p[1]; item.appendChild(s);
+        });
+        ol.appendChild(item);
+      });
+      document.getElementById("bloque-deseos").hidden = false;
+    }
+  }
+
+  function fuentesListas() {
+    if (!document.fonts || !document.fonts.load) return Promise.resolve();
+    return Promise.all([
+      document.fonts.load('italic 900 150px "Fraunces"'),
+      document.fonts.load('900 34px "Fraunces"'),
+      document.fonts.load('800 38px "Bricolage Grotesque"'),
+      document.fonts.load('600 31px "Bricolage Grotesque"'),
+    ]).catch(function () {});
+  }
+
+  function mostrar(s) {
+    d = normalizar(s || {});
+    if (!d.razon) {
+      var e = document.getElementById("error");
+      e.textContent = "El resultado vino incompleto. Escribe " + COMANDO + " en Claude Code y vuelve a abrir esta página.";
+      e.hidden = false;
+      return;
+    }
+    h = horario();
+    llenarPaneles();
+    fuentesListas().then(function () {
+      plan = armarPlan();
+      lienzo.setAttribute("aria-label", "Torta de cumpleaños de " + (d.reel || "tu mejor reel") + (d.vistas !== null ? ", " + miles(d.vistas) + " vistas" : "") + ". Por qué vivió: " + d.razon);
+      document.getElementById("escenario").hidden = false;
+      reproducir();
+    });
+  }
+
+  document.getElementById("otra-vez").addEventListener("click", function () { if (d && plan) reproducir(); });
+  document.getElementById("bajar").addEventListener("click", function () {
+    if (!d || !plan) return;
+    var c = document.createElement("canvas"); c.width = W; c.height = H;
+    pintar(c.getContext("2d"), h.fin);
+    var nombre = "cumple-" + (d.reel || "reel").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) + ".png";
+    c.toBlob(function (blob) {
+      var archivo = new File([blob], nombre, { type: "image/png" });
+      // En el celular, compartir abre la hoja para guardarla o subirla a historias.
+      if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+        navigator.share({ files: [archivo], title: "El cumpleaños de tu mejor reel" }).catch(function () {});
+        return;
+      }
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = nombre;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    }, "image/png");
+  });
+
+  // ---------- Los datos: datos.js, o el ejemplo si todavía no hay ----------
+  function cargar(src, listo) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.onload = function () { listo(true); };
+    s.onerror = function () { listo(false); };
+    document.head.appendChild(s);
+  }
+  function avisar(motivo) {
+    var p = document.getElementById("aviso-ejemplo"), code = document.createElement("code");
+    code.textContent = COMANDO;
+    p.textContent = motivo === "roto" ? "No pude leer datos.js. Esto es un ejemplo. Escribe " : "Esto es un ejemplo. Escribe ";
+    p.appendChild(code);
+    p.appendChild(document.createTextNode(" en Claude Code para ver el tuyo."));
+    p.hidden = false;
+  }
+  cargar("datos.js", function (hay) {
+    if (hay && window.FIESTA) { mostrar(window.FIESTA); return; }
+    var motivo = hay ? "roto" : "falta";
+    window.FIESTA = undefined;
+    cargar("ejemplo.js", function (ok) {
+      if (ok && window.FIESTA) { avisar(motivo); mostrar(window.FIESTA); return; }
+      var e = document.getElementById("error");
+      e.textContent = "No encontré el resultado. Escribe " + COMANDO + " en Claude Code y vuelve a abrir esta página.";
+      e.hidden = false;
+    });
+  });
+})();
+</script>
+</body>
+</html>

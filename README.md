@@ -9,13 +9,14 @@ Las apps de la serie **«Día N creando apps súper locas sin saber programar»*
 | 3 | `/juez` | Juzga tu idea de negocio: te hace cinco preguntas, sale a investigar a tu competencia y lo que cobra, y dicta sentencia con pruebas. |
 | 4 | `/chismoso` | Le pasas el link de un video que explotó, tuyo o de otro, y lee los comentarios por ti: qué piden, de qué se quejan y qué preguntan, con cinco videos para hacer mañana. |
 | 5 | `/miss-portada` | Le pasas una captura de tu perfil y hace un concurso de belleza con tus portadas: elimina a las que no se leen en chiquito, le da la banda de Miss Simpatía a la de más vistas y corona a la mejor. |
+| 6 | `/fiesta` | Lo contrario del velorio: le pasas el link de tu reel que mejor te fue y festeja su cumpleaños. Te dice en qué segundo enganchó y por qué vivió, y te da tres videos para repetirlo. |
 
 Cada una te deja un informe completo y una imagen para tus historias.
 
 ## Qué necesitas
 
 - **Claude Code**, con una cuenta de Claude (Pro o Max) o una clave de API. Si no lo tienes, está en [claude.com/claude-code](https://claude.com/claude-code).
-- Para el velorio, **yt-dlp** (baja el video del link) y **ffmpeg** (lo mira por dentro). Para el chismoso, solo **yt-dlp** (baja los comentarios). Para Miss Portada, **ffmpeg** (recorta tus portadas de la captura para subirlas al escenario; sin él, el concurso sale igual, sin las fotos). Si no los tienes, la app te ofrece instalarlos.
+- Para el velorio y la fiesta, **yt-dlp** (baja el video del link) y **ffmpeg** (lo mira por dentro). Para el chismoso, solo **yt-dlp** (baja los comentarios). Para Miss Portada, **ffmpeg** (recorta tus portadas de la captura para subirlas al escenario; sin él, el concurso sale igual, sin las fotos). Si no los tienes, la app te ofrece instalarlos.
 
 ## Cómo instalarlas
 
@@ -23,7 +24,7 @@ Cada una te deja un informe completo y una imagen para tus historias.
 2. Abre la carpeta en Claude Code:
    - en la app de escritorio, elige la carpeta `apps-super-locas`;
    - en la terminal, entra a la carpeta y escribe `claude`.
-3. Escribe el comando de la app: `/velorio`, `/tarot`, `/juez`, `/chismoso` o `/miss-portada`. También puedes pedirlo con tus palabras, por ejemplo «quiero saber por qué murió mi reel».
+3. Escribe el comando de la app: `/velorio`, `/tarot`, `/juez`, `/chismoso`, `/miss-portada` o `/fiesta`. También puedes pedirlo con tus palabras, por ejemplo «quiero saber por qué murió mi reel».
 
 La primera vez, Claude Code te pregunta si confías en la carpeta: dile que sí.
 
@@ -64,9 +65,16 @@ La primera vez, Claude Code te pregunta si confías en la carpeta: dile que sí.
 3. Le da la banda de Miss Simpatía a la de más vistas, aunque sea fea, y corona a la que mejor se entiende en un segundo y más frena el pulgar.
 4. Te deja el acta en `concursos/`, la coronación animada con la imagen para historias, un arreglo para cada eliminada y la receta de tu próxima portada.
 
+### Día 6 · El cumpleaños de tu mejor reel (`/fiesta`)
+
+1. Le pasas el link del reel o TikTok que mejor te fue. Si le dices cuántas vistas suelen tener tus otros videos, te dice cuántas veces más vivió este.
+2. Baja el video y sus números, saca cuadros, y mide cómo arranca, el sonido y los cortes, como el velorio.
+3. Te dice en qué segundo enganchó y por qué vivió, con pruebas, y lo que casi lo arruina. Lo que es una sospecha (la hora, el sonido) lo dice como sospecha.
+4. Te da tres deseos, tres videos para repetirlo con su primera frase escrita, y te deja el acta en `cumples/` y la torta para historias, con velitas que forman tus vistas.
+
 ## Cuánto gasta
 
-Usan tu cuenta de Claude. El juez hace entre 6 y 15 búsquedas en internet por juicio, el velorio mira hasta 30 cuadros del video, el tarot lee una o dos capturas, el chismoso lee hasta 500 comentarios y Miss Portada mira una captura y sus recortes.
+Usan tu cuenta de Claude. El juez hace entre 6 y 15 búsquedas en internet por juicio, el velorio y la fiesta miran hasta 30 cuadros del video, el tarot lee una o dos capturas, el chismoso lee hasta 500 comentarios y Miss Portada mira una captura y sus recortes.
 
 ## Privacidad
 
