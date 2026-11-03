@@ -20,6 +20,8 @@
       "Edit(./miss-portada/fotos.js)",
       "Edit(./cumples/**)",
       "Edit(./fiesta/datos.js)",
+      "Edit(./gemelos/**)",
+      "Edit(./gemelo/datos.js)",
       "Bash(base64:*)"
     ]
   }

@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tu gemelo malvado</title>
+<meta name="description" content="El creador de tu mismo tema que hace todo lo que tú no haces: su ficha de villano, su plan y cómo adelantarte.">
+<meta name="theme-color" content="#1a0b2e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,500;1,9..144,900&display=swap">
+<style>
+/* Una sola columna para el celular. La ficha es un canvas de 1080x1920: el gemelo aparece
+   una vez (con un glitch) y queda quieta en la imagen que se baja para historias.
+   El resultado sale de datos.js, que escribe /gemelo; si no está, de ejemplo.js. */
+:root {
+  --noche: #1a0b2e;
+  --violeta: #3b0a5c;
+  --lima: #a3e635;
+  --rosa: #ff2e88;
+  --turquesa: #22d3ee;
+  --amarillo: #ffd23f;
+  --papel: #f7fdf0;
+  --tinta: #150a24;
+  --tinta-suave: #5a4f6e;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  background: var(--noche);
+  color: #fff;
+  font: 500 16px/1.5 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+main {
+  max-width: 440px; margin: 0 auto;
+  padding: 36px max(18px, env(safe-area-inset-left)) 48px max(18px, env(safe-area-inset-right));
+  display: grid; gap: 22px;
+}
+[hidden] { display: none !important; }
+.serie { font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--lima); margin: 0; font-weight: 800; }
+h1 { font: italic 900 clamp(2.4rem, 12vw, 3.2rem)/0.98 "Fraunces", Georgia, serif; margin: 0; letter-spacing: -0.02em; }
+.bajada { margin: 0; font-size: 1.08rem; font-weight: 600; }
+.aviso-ejemplo {
+  margin: 0; background: var(--lima); color: var(--tinta);
+  font-weight: 700; border-radius: 16px; padding: 12px 16px;
+}
+.aviso-ejemplo code { font: 800 1em "Bricolage Grotesque", system-ui, sans-serif; background: rgba(21, 10, 36, 0.12); padding: 1px 6px; border-radius: 6px; }
+.escenario { display: grid; gap: 12px; }
+.escenario canvas {
+  width: 100%; height: auto; display: block; aspect-ratio: 9 / 16;
+  border-radius: 22px; background: var(--noche);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+.botones { display: grid; gap: 10px; }
+button {
+  font: 800 1.05rem "Bricolage Grotesque", system-ui, sans-serif;
+  border: 0; border-radius: 999px; padding: 15px 22px; min-height: 52px; cursor: pointer;
+  background: var(--rosa); color: #fff;
+}
+button.secundario { background: transparent; color: #fff; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.6); }
+button:active { transform: translateY(1px); }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--lima); outline-offset: 3px; }
+.panel {
+  background: var(--papel); color: var(--tinta);
+  border-radius: 22px; padding: 20px;
+  display: grid; gap: 14px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+.panel h2 { margin: 0; font: 800 0.8rem/1.2 "Bricolage Grotesque", system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: #6d28d9; }
+.panel p { margin: 0; }
+.nombre { font: italic 900 1.7rem/1.1 "Fraunces", Georgia, serif; }
+.lema { font: italic 500 1.05rem/1.4 "Fraunces", Georgia, serif; color: var(--tinta-suave); }
+.peligro { display: flex; gap: 6px; font-size: 1.4rem; }
+.lista { margin: 0; padding-left: 1.3em; display: grid; gap: 12px; }
+.lista li::marker { color: var(--rosa); font-weight: 800; }
+.poderes { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.poderes li { background: #fff; border: 2px solid #e4f7c9; border-radius: 14px; padding: 12px 14px; display: grid; gap: 4px; }
+.poderes .poder { font-weight: 800; }
+.poderes .prueba { color: var(--tinta-suave); font-size: 0.95rem; }
+.vacio { color: var(--tinta-suave); font-weight: 600; }
+.error { margin: 0; background: #fff; color: #6d28d9; font-weight: 700; border-radius: 16px; padding: 14px 16px; }
+footer { text-align: center; color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; }
+footer a { color: #fff; font-weight: 800; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="serie">Apps súper locas · Día 7</p>
+    <h1>Tu gemelo malvado</h1>
+    <p class="bajada">El creador de tu tema que hace todo lo que a tu cuenta le falta.</p>
+  </header>
+
+  <p class="aviso-ejemplo" id="aviso-ejemplo" hidden></p>
+  <p class="error" id="error" role="alert" hidden></p>
+
+  <section class="escenario" id="escenario" hidden>
+    <canvas id="lienzo" width="1080" height="1920" role="img"></canvas>
+    <div class="botones">
+      <button type="button" id="bajar">Bajar para historias</button>
+      <button type="button" id="otra-vez" class="secundario">Ver aparecer al gemelo otra vez</button>
+    </div>
+  </section>
+
+  <section class="panel" id="bloque-ficha" hidden>
+    <h2>La ficha del villano</h2>
+    <p class="nombre" id="nombre"></p>
+    <p class="lema" id="lema"></p>
+    <div class="peligro" id="peligro" role="img"></div>
+    <p class="vacio" id="porque-peligro"></p>
+  </section>
+
+  <section class="panel" id="bloque-poderes" hidden>
+    <h2>Sus superpoderes (lo que a tu cuenta le falta)</h2>
+    <ul class="poderes" id="poderes"></ul>
+  </section>
+
+  <section class="panel" id="bloque-plan" hidden>
+    <h2>Su plan para robarte los seguidores</h2>
+    <ol class="lista" id="plan"></ol>
+  </section>
+
+  <section class="panel" id="bloque-debilidad" hidden>
+    <h2>Su única debilidad</h2>
+    <p id="debilidad"></p>
+  </section>
+
+  <section class="panel" id="bloque-adelantarte" hidden>
+    <h2>Cómo adelantarte esta semana</h2>
+    <ol class="lista" id="adelantarte"></ol>
+  </section>
+
+  <footer>Hecha con Claude Code por alguien que no sabe programar · <a href="https://www.instagram.com/crece_de_cero/">@crece_de_cero</a></footer>
+</main>
+
+<script>
+(function () {
+  var COMANDO = "/gemelo";
+  var W = 1080, H = 1920;
+  var d = null, h = null, plan = null, animacion = null;
+
+  // ---------- Datos ----------
+  function texto(v) { return v === null || v === undefined ? "" : String(v).trim(); }
+  function numero(v) { var n = Number(v); return v !== null && v !== "" && isFinite(n) && n >= 0 ? Math.round(n) : null; }
+  function fechaLinda(f) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto(f));
+    return m ? Number(m[3]) + "/" + Number(m[2]) + "/" + m[1] : "";
+  }
+  function lista(v, max) { return (Array.isArray(v) ? v : []).map(texto).filter(Boolean).slice(0, max); }
+  function normalizar(s) {
+    var p = numero(s.peligro);
+    return {
+      fecha: texto(s.fecha), cuenta: texto(s.cuenta), red: texto(s.red), seguidores: numero(s.seguidores),
+      nombre: texto(s.nombre), lema: texto(s.lema), peligro: p === null ? null : Math.max(1, Math.min(5, p)),
+      porquePeligro: texto(s.porque_peligro),
+      superpoderes: (Array.isArray(s.superpoderes) ? s.superpoderes : []).map(function (x) {
+        return { poder: texto(x && x.poder), prueba: texto(x && x.prueba) };
+      }).filter(function (x) { return x.poder; }).slice(0, 3),
+      plan: lista(s.plan, 3), debilidad: texto(s.debilidad), adelantarte: lista(s.adelantarte, 3),
+    };
+  }
+
+  // ---------- Movimiento ----------
+  function limitar(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function avance(t, desde, dura) { return limitar((t - desde) / dura, 0, 1); }
+  function salida(p) { return 1 - Math.pow(1 - p, 3); }
+  function rebote(p) { var c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); }
+  function azar(semilla) {
+    return function () {
+      semilla |= 0; semilla = semilla + 0x6D2B79F5 | 0;
+      var t = Math.imul(semilla ^ semilla >>> 15, 1 | semilla);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  // Los momentos de la ficha, en segundos.
+  function horario() {
+    var x = { titulo: 0.2, vos: 0.8, gemelo: 1.9, nombre: 2.9, peligro: 3.6, poderes: 4.5, adelantarte: 5.5 };
+    x.fin = x.adelantarte + 1.4;
+    return x;
+  }
+
+  // ---------- Texto ----------
+  function renglones(ctx, contenido, ancho, max) {
+    var palabras = texto(contenido).split(/\s+/).filter(Boolean), lineas = [], linea = "";
+    palabras.forEach(function (p) {
+      var prueba = linea ? linea + " " + p : p;
+      if (!linea || ctx.measureText(prueba).width <= ancho) linea = prueba;
+      else { lineas.push(linea); linea = p; }
+    });
+    if (linea) lineas.push(linea);
+    if (lineas.length > max) {
+      lineas = lineas.slice(0, max);
+      var ultima = lineas[max - 1];
+      while (ultima && ctx.measureText(ultima + "…").width > ancho) ultima = ultima.replace(/\s*\S+$/, "");
+      lineas[max - 1] = ultima + "…";
+    }
+    return lineas;
+  }
+  function marco(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+
+  // Las dos tarjetas de abajo (superpoderes y cómo adelantarte), medidas antes de dibujar: si no
+  // entran, se achican parejo.
+  function armarPlan() {
+    var ctx = document.createElement("canvas").getContext("2d"), p = {};
+    p.poderes = d.superpoderes.map(function (x) {
+      ctx.font = '800 34px "Bricolage Grotesque"'; var a = renglones(ctx, x.poder, 800, 1);
+      ctx.font = '600 28px "Bricolage Grotesque"'; var b = renglones(ctx, x.prueba, 800, 2);
+      return { poder: a, prueba: b };
+    });
+    p.altoPoderes = 76 + p.poderes.reduce(function (s, x) { return s + 42 + x.prueba.length * 36 + 18; }, 0) + 10;
+    ctx.font = '800 30px "Bricolage Grotesque"';
+    p.adelantarte = d.adelantarte.map(function (a) { return renglones(ctx, a, 820, 2); });
+    p.altoAdelantarte = p.adelantarte.length ? 76 + p.adelantarte.reduce(function (s, l) { return s + l.length * 38 + 16; }, 0) + 12 : 0;
+    p.arriba = 1160; p.libre = 1840 - p.arriba;
+    var total = p.altoPoderes + (p.altoAdelantarte ? 24 + p.altoAdelantarte : 0);
+    p.escala = total > p.libre ? p.libre / total : 1;
+    return p;
+  }
+
+  // ---------- Dibujo ----------
+  function fondo(ctx, t) {
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#1a0b2e"); g.addColorStop(0.55, "#3b0a5c"); g.addColorStop(1, "#1f3a0e");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // Rayos de laboratorio detrás de las dos siluetas.
+    ctx.save(); ctx.translate(540, 700); ctx.rotate(t * 0.15);
+    for (var i = 0; i < 18; i++) {
+      ctx.rotate(Math.PI * 2 / 18);
+      ctx.fillStyle = i % 2 ? "rgba(163, 230, 53, 0.06)" : "rgba(255, 46, 136, 0.05)";
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-90, -1200); ctx.lineTo(90, -1200); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+    // Burbujas de laboratorio.
+    var rnd = azar(5);
+    for (var k = 0; k < 40; k++) {
+      var x = rnd() * W, r = 4 + rnd() * 10, y = (1920 - ((t * (40 + rnd() * 80) + rnd() * 1920) % 1920));
+      ctx.globalAlpha = 0.25; ctx.strokeStyle = k % 2 ? "#a3e635" : "#ff2e88"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function titulo(ctx, t) {
+    var p = avance(t, h.titulo, 0.6);
+    if (p <= 0) return;
+    ctx.save(); ctx.globalAlpha = Math.min(1, p * 2);
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#a3e635"; ctx.font = '800 30px "Bricolage Grotesque"';
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "5px";
+    ctx.fillText("APPS SÚPER LOCAS · DÍA 7", 540, 120);
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+    ctx.translate(540, 222); var s = rebote(p); ctx.scale(s, s);
+    ctx.shadowColor = "#ff2e88"; ctx.shadowBlur = 30; ctx.fillStyle = "#ffffff";
+    ctx.font = 'italic 900 120px "Fraunces"'; ctx.fillText("Tu gemelo", 0, 0);
+    ctx.fillStyle = "#a3e635"; ctx.fillText("malvado", 0, 108);
+    ctx.restore();
+  }
+
+  // Una silueta: cabeza y hombros. La del gemelo lleva antifaz, cuernos y bigote.
+  function silueta(ctx, cx, cy, s, color, malvado, t) {
+    ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s);
+    ctx.fillStyle = color; ctx.strokeStyle = "#0b0614"; ctx.lineWidth = 8;
+    // Hombros.
+    ctx.beginPath(); ctx.moveTo(-150, 210); ctx.quadraticCurveTo(-150, 90, -40, 80); ctx.lineTo(40, 80); ctx.quadraticCurveTo(150, 90, 150, 210); ctx.closePath(); ctx.fill(); ctx.stroke();
+    // Cabeza.
+    ctx.beginPath(); ctx.arc(0, 0, 92, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    if (malvado) {
+      // Cuernos.
+      [-1, 1].forEach(function (lado) {
+        ctx.beginPath(); ctx.moveTo(lado * 48, -70); ctx.quadraticCurveTo(lado * 92, -120, lado * 70, -170); ctx.quadraticCurveTo(lado * 60, -112, lado * 22, -86); ctx.closePath();
+        ctx.fillStyle = "#a3e635"; ctx.fill(); ctx.stroke();
+      });
+      // Antifaz con ojos que brillan.
+      marco(ctx, -84, -32, 168, 50, 24); ctx.fillStyle = "#0b0614"; ctx.fill();
+      var brillo = 0.6 + 0.4 * Math.sin(t * 6);
+      [-36, 36].forEach(function (x) {
+        ctx.beginPath(); ctx.ellipse(x, -8, 18, 9, 0, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(163, 230, 53, " + brillo + ")"; ctx.shadowColor = "#a3e635"; ctx.shadowBlur = 20; ctx.fill(); ctx.shadowBlur = 0;
+      });
+      // Bigote de villano.
+      ctx.beginPath(); ctx.moveTo(0, 40);
+      ctx.bezierCurveTo(-30, 26, -66, 40, -74, 22); ctx.bezierCurveTo(-60, 62, -18, 56, 0, 48);
+      ctx.bezierCurveTo(18, 56, 60, 62, 74, 22); ctx.bezierCurveTo(66, 40, 30, 26, 0, 40);
+      ctx.fillStyle = "#0b0614"; ctx.fill();
+    } else {
+      // Ojos y sonrisa simples.
+      ctx.fillStyle = "#0b0614";
+      [-32, 32].forEach(function (x) { ctx.beginPath(); ctx.arc(x, -10, 10, 0, Math.PI * 2); ctx.fill(); });
+      ctx.beginPath(); ctx.arc(0, 18, 34, 0.15 * Math.PI, 0.85 * Math.PI); ctx.lineWidth = 8; ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // El glitch: bandas corridas en rosa y lima, solo mientras aparece el gemelo.
+  function glitch(ctx, x0, y0, w, alto, fuerza, t) {
+    if (fuerza <= 0) return;
+    var rnd = azar(Math.floor(t * 30));
+    for (var i = 0; i < 9; i++) {
+      var y = y0 + rnd() * alto, hh = 6 + rnd() * 30, dx = (rnd() - 0.5) * 120 * fuerza;
+      ctx.fillStyle = i % 2 ? "rgba(255, 46, 136, " + 0.5 * fuerza + ")" : "rgba(163, 230, 53, " + 0.5 * fuerza + ")";
+      ctx.fillRect(x0 + dx, y, w, hh);
+    }
+  }
+
+  function enfrentados(ctx, t) {
+    var pv = avance(t, h.vos, 0.6), pg = avance(t, h.gemelo, 0.8), y = 710;
+    // El espejo en el medio.
+    if (pv > 0) {
+      ctx.save(); ctx.globalAlpha = pv;
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.5)"; ctx.lineWidth = 4; ctx.setLineDash([16, 14]);
+      ctx.beginPath(); ctx.moveTo(540, 540); ctx.lineTo(540, 905); ctx.stroke(); ctx.setLineDash([]);
+      ctx.restore();
+      silueta(ctx, 300, y, 0.9 * (pv < 1 ? rebote(pv) : 1), "#22d3ee", false, t);
+      ctx.save(); ctx.globalAlpha = pv; ctx.textAlign = "center"; ctx.fillStyle = "#22d3ee"; ctx.font = '800 34px "Bricolage Grotesque"';
+      ctx.fillText(d.cuenta || "VOS", 300, 940);
+      ctx.restore();
+    }
+    if (pg > 0) {
+      var tiembla = (1 - pg) * Math.sin(t * 60) * 18;
+      ctx.save(); ctx.globalAlpha = Math.min(1, pg * 1.5);
+      silueta(ctx, 780 + tiembla, y, 0.9 * (pg < 1 ? rebote(pg) : 1), "#ff2e88", true, t);
+      ctx.restore();
+      glitch(ctx, 600, 540, 360, 380, 1 - pg, t);
+    }
+  }
+
+  function ficha(ctx, t) {
+    var p = avance(t, h.nombre, 0.6);
+    if (p <= 0) return;
+    ctx.save(); ctx.globalAlpha = p; ctx.translate(0, (1 - salida(p)) * 30);
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#ff2e88"; ctx.font = '800 30px "Bricolage Grotesque"';
+    ctx.fillText("SE LLAMA", 780, 940);
+    ctx.fillStyle = "#ffffff"; ctx.font = 'italic 900 64px "Fraunces"';
+    var nombre = renglones(ctx, d.nombre, 980, 1)[0] || "";
+    ctx.fillText(nombre, 540, 1012);
+    ctx.fillStyle = "#e9d5ff"; ctx.font = 'italic 500 34px "Fraunces"';
+    renglones(ctx, d.lema ? "«" + d.lema + "»" : "", 920, 2).forEach(function (l, i) { ctx.fillText(l, 540, 1060 + i * 42); });
+    ctx.restore();
+  }
+
+  function calaveras(ctx, t) {
+    var pp = avance(t, h.peligro, 0.8);
+    if (pp <= 0 || !d.peligro) return;
+    var y = 452;
+    ctx.save(); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.globalAlpha = Math.min(1, pp * 2);
+    ctx.fillStyle = "#a3e635"; ctx.font = '800 26px "Bricolage Grotesque"';
+    ctx.fillText("NIVEL DE PELIGRO " + d.peligro + " DE 5", 540, y - 50);
+    for (var i = 0; i < 5; i++) {
+      var x = 540 + (i - 2) * 76, prendida = i < d.peligro && pp >= (i + 1) / 6;
+      calavera(ctx, x, y, prendida);
+    }
+    ctx.restore();
+  }
+  function calavera(ctx, x, y, prendida) {
+    ctx.save(); ctx.translate(x, y);
+    ctx.fillStyle = prendida ? "#a3e635" : "rgba(255, 255, 255, 0.15)";
+    if (prendida) { ctx.shadowColor = "#a3e635"; ctx.shadowBlur = 16; }
+    ctx.beginPath(); ctx.arc(0, -4, 26, Math.PI, 0); ctx.lineTo(26, 10); ctx.lineTo(14, 10); ctx.lineTo(14, 22); ctx.lineTo(-14, 22); ctx.lineTo(-14, 10); ctx.lineTo(-26, 10); ctx.closePath(); ctx.fill();
+    ctx.shadowBlur = 0; ctx.fillStyle = "#1a0b2e";
+    [-10, 10].forEach(function (dx) { ctx.beginPath(); ctx.arc(dx, -4, 7, 0, Math.PI * 2); ctx.fill(); });
+    ctx.restore();
+  }
+
+  function tarjetas(ctx, t) {
+    var pp = avance(t, h.poderes, 0.7), pa = avance(t, h.adelantarte, 0.7);
+    if (pp <= 0) return;
+    ctx.save();
+    ctx.translate(540 * (1 - plan.escala), plan.arriba); ctx.scale(plan.escala, plan.escala);
+    ctx.save(); ctx.globalAlpha = pp; ctx.translate(0, (1 - salida(pp)) * 80);
+    marco(ctx, 60, 0, 960, plan.altoPoderes, 26); ctx.fillStyle = "#f7fdf0"; ctx.fill();
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "#6d28d9"; ctx.font = '800 27px "Bricolage Grotesque"';
+    ctx.fillText("SUS SUPERPODERES: LO QUE A TU CUENTA LE FALTA", 100, 54);
+    var y = 104;
+    plan.poderes.forEach(function (x, i) {
+      ctx.fillStyle = ["#ff2e88", "#22d3ee", "#a3e635"][i]; ctx.beginPath(); ctx.arc(112, y - 11, 10, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#150a24"; ctx.font = '800 34px "Bricolage Grotesque"'; ctx.fillText(x.poder[0] || "", 136, y);
+      y += 42;
+      ctx.fillStyle = "#5a4f6e"; ctx.font = '600 28px "Bricolage Grotesque"';
+      x.prueba.forEach(function (l) { ctx.fillText(l, 136, y); y += 36; });
+      y += 18;
+    });
+    ctx.restore();
+    if (plan.altoAdelantarte && pa > 0) {
+      var ya = plan.altoPoderes + 24;
+      ctx.save(); ctx.globalAlpha = pa; ctx.translate(0, (1 - salida(pa)) * 80);
+      marco(ctx, 60, ya, 960, plan.altoAdelantarte, 26); ctx.fillStyle = "#a3e635"; ctx.fill();
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = "#150a24"; ctx.font = '800 27px "Bricolage Grotesque"';
+      ctx.fillText("CÓMO ADELANTARTE ESTA SEMANA", 100, ya + 54);
+      var yy = ya + 104;
+      plan.adelantarte.forEach(function (lineas, i) {
+        ctx.font = '900 32px "Fraunces"'; ctx.fillText(String(i + 1), 100, yy);
+        ctx.font = '800 30px "Bricolage Grotesque"';
+        lineas.forEach(function (l) { ctx.fillText(l, 140, yy); yy += 38; });
+        yy += 16;
+      });
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function pintar(ctx, t) {
+    fondo(ctx, t);
+    titulo(ctx, t);
+    calaveras(ctx, t);
+    enfrentados(ctx, t);
+    ficha(ctx, t);
+    tarjetas(ctx, t);
+    ctx.save();
+    ctx.fillStyle = "rgba(255, 255, 255, 0.75)"; ctx.font = '700 26px "Bricolage Grotesque"'; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.globalAlpha = avance(t, h.poderes, 0.6);
+    ctx.fillText("@crece_de_cero · hecha con Claude Code" + (d.fecha ? " · " + fechaLinda(d.fecha) : ""), 540, 1885);
+    ctx.restore();
+  }
+
+  // ---------- La página ----------
+  var lienzo = document.getElementById("lienzo"), ctxLienzo = lienzo.getContext("2d");
+  function detener() { if (animacion) cancelAnimationFrame(animacion); animacion = null; }
+  function cuadro(t) { ctxLienzo.clearRect(0, 0, W, H); pintar(ctxLienzo, t); }
+  function reproducir() {
+    detener();
+    var quieto = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (quieto) { cuadro(h.fin); return; }
+    var inicio = null;
+    function paso(ahora) {
+      if (inicio === null) inicio = ahora;
+      var t = (ahora - inicio) / 1000;
+      cuadro(Math.min(t, h.fin));
+      if (t < h.fin) animacion = requestAnimationFrame(paso); else animacion = null;
+    }
+    animacion = requestAnimationFrame(paso);
+  }
+  // Para grabar la ficha cuadro por cuadro: gemeloCuadro(segundos) devuelve la duración.
+  window.gemeloCuadro = function (t) { detener(); cuadro(Math.max(0, Math.min(t, h.fin))); return h.fin; };
+
+  function li(t) { var e = document.createElement("li"); e.textContent = t; return e; }
+  function llenarPaneles() {
+    document.getElementById("nombre").textContent = d.nombre;
+    document.getElementById("lema").textContent = d.lema ? "«" + d.lema + "»" : "";
+    var pel = document.getElementById("peligro"); pel.textContent = "";
+    if (d.peligro) {
+      for (var i = 0; i < 5; i++) { var s = document.createElement("span"); s.textContent = i < d.peligro ? "☠" : "·"; pel.appendChild(s); }
+      pel.setAttribute("aria-label", "Nivel de peligro " + d.peligro + " de 5");
+    }
+    document.getElementById("porque-peligro").textContent = d.porquePeligro;
+    document.getElementById("bloque-ficha").hidden = false;
+    var ul = document.getElementById("poderes"); ul.textContent = "";
+    d.superpoderes.forEach(function (x) {
+      var item = document.createElement("li");
+      var a = document.createElement("span"); a.className = "poder"; a.textContent = x.poder; item.appendChild(a);
+      if (x.prueba) { var b = document.createElement("span"); b.className = "prueba"; b.textContent = x.prueba; item.appendChild(b); }
+      ul.appendChild(item);
+    });
+    if (d.superpoderes.length) document.getElementById("bloque-poderes").hidden = false;
+    var ol = document.getElementById("plan"); ol.textContent = "";
+    d.plan.forEach(function (x) { ol.appendChild(li(x)); });
+    if (d.plan.length) document.getElementById("bloque-plan").hidden = false;
+    if (d.debilidad) { document.getElementById("debilidad").textContent = d.debilidad; document.getElementById("bloque-debilidad").hidden = false; }
+    var ad = document.getElementById("adelantarte"); ad.textContent = "";
+    d.adelantarte.forEach(function (x) { ad.appendChild(li(x)); });
+    if (d.adelantarte.length) document.getElementById("bloque-adelantarte").hidden = false;
+  }
+
+  function fuentesListas() {
+    if (!document.fonts || !document.fonts.load) return Promise.resolve();
+    return Promise.all([
+      document.fonts.load('italic 900 128px "Fraunces"'),
+      document.fonts.load('italic 500 34px "Fraunces"'),
+      document.fonts.load('800 34px "Bricolage Grotesque"'),
+      document.fonts.load('600 28px "Bricolage Grotesque"'),
+    ]).catch(function () {});
+  }
+
+  function mostrar(s) {
+    d = normalizar(s || {});
+    if (!d.nombre || !d.superpoderes.length) {
+      var e = document.getElementById("error");
+      e.textContent = "El resultado vino incompleto. Escribe " + COMANDO + " en Claude Code y vuelve a abrir esta página.";
+      e.hidden = false;
+      return;
+    }
+    h = horario();
+    llenarPaneles();
+    fuentesListas().then(function () {
+      plan = armarPlan();
+      lienzo.setAttribute("aria-label", "Tu gemelo malvado: " + d.nombre + ". Sus superpoderes: " + d.superpoderes.map(function (x) { return x.poder; }).join(", ") + ".");
+      document.getElementById("escenario").hidden = false;
+      reproducir();
+    });
+  }
+
+  document.getElementById("otra-vez").addEventListener("click", function () { if (d && plan) reproducir(); });
+  document.getElementById("bajar").addEventListener("click", function () {
+    if (!d || !plan) return;
+    var c = document.createElement("canvas"); c.width = W; c.height = H;
+    pintar(c.getContext("2d"), h.fin);
+    var nombre = "gemelo-" + (d.nombre || "malvado").toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) + ".png";
+    c.toBlob(function (blob) {
+      var archivo = new File([blob], nombre, { type: "image/png" });
+      // En el celular, compartir abre la hoja para guardarla o subirla a historias.
+      if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+        navigator.share({ files: [archivo], title: "Tu gemelo malvado" }).catch(function () {});
+        return;
+      }
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = nombre;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    }, "image/png");
+  });
+
+  // ---------- Los datos: datos.js, o el ejemplo si todavía no hay ----------
+  function cargar(src, listo) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.onload = function () { listo(true); };
+    s.onerror = function () { listo(false); };
+    document.head.appendChild(s);
+  }
+  function avisar(motivo) {
+    var p = document.getElementById("aviso-ejemplo"), code = document.createElement("code");
+    code.textContent = COMANDO;
+    p.textContent = motivo === "roto" ? "No pude leer datos.js. Esto es un ejemplo. Escribe " : "Esto es un ejemplo. Escribe ";
+    p.appendChild(code);
+    p.appendChild(document.createTextNode(" en Claude Code para ver el tuyo."));
+    p.hidden = false;
+  }
+  cargar("datos.js", function (hay) {
+    if (hay && window.GEMELO) { mostrar(window.GEMELO); return; }
+    var motivo = hay ? "roto" : "falta";
+    window.GEMELO = undefined;
+    cargar("ejemplo.js", function (ok) {
+      if (ok && window.GEMELO) { avisar(motivo); mostrar(window.GEMELO); return; }
+      var e = document.getElementById("error");
+      e.textContent = "No encontré el resultado. Escribe " + COMANDO + " en Claude Code y vuelve a abrir esta página.";
+      e.hidden = false;
+    });
+  });
+})();
+</script>
+</body>
+</html>

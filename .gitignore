@@ -11,6 +11,8 @@ concursos/*
 !concursos/.gitkeep
 cumples/*
 !cumples/.gitkeep
+gemelos/*
+!gemelos/.gitkeep
 juez/datos.js
 tarot/datos.js
 velorio/datos.js
@@ -18,4 +20,5 @@ chismoso/datos.js
 miss-portada/datos.js
 miss-portada/fotos.js
 fiesta/datos.js
+gemelo/datos.js
 .claude/settings.local.json

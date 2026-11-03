@@ -10,6 +10,7 @@ Las apps de la serie **«Día N creando apps súper locas sin saber programar»*
 | 4 | `/chismoso` | Le pasas el link de un video que explotó, tuyo o de otro, y lee los comentarios por ti: qué piden, de qué se quejan y qué preguntan, con cinco videos para hacer mañana. |
 | 5 | `/miss-portada` | Le pasas una captura de tu perfil y hace un concurso de belleza con tus portadas: elimina a las que no se leen en chiquito, le da la banda de Miss Simpatía a la de más vistas y corona a la mejor. |
 | 6 | `/fiesta` | Lo contrario del velorio: le pasas el link de tu reel que mejor te fue y festeja su cumpleaños. Te dice en qué segundo enganchó y por qué vivió, y te da tres videos para repetirlo. |
+| 7 | `/gemelo` | Le pasas una captura de tu perfil y crea a tu gemelo malvado: el creador de tu tema que te va a robar los seguidores porque hace todo lo que tú no haces. Te muestra su ficha de villano, su plan y cómo adelantarte. |
 
 Cada una te deja un informe completo y una imagen para tus historias.
 
@@ -24,7 +25,7 @@ Cada una te deja un informe completo y una imagen para tus historias.
 2. Abre la carpeta en Claude Code:
    - en la app de escritorio, elige la carpeta `apps-super-locas`;
    - en la terminal, entra a la carpeta y escribe `claude`.
-3. Escribe el comando de la app: `/velorio`, `/tarot`, `/juez`, `/chismoso`, `/miss-portada` o `/fiesta`. También puedes pedirlo con tus palabras, por ejemplo «quiero saber por qué murió mi reel».
+3. Escribe el comando de la app: `/velorio`, `/tarot`, `/juez`, `/chismoso`, `/miss-portada`, `/fiesta` o `/gemelo`. También puedes pedirlo con tus palabras, por ejemplo «quiero saber por qué murió mi reel».
 
 La primera vez, Claude Code te pregunta si confías en la carpeta: dile que sí.
 
@@ -72,9 +73,16 @@ La primera vez, Claude Code te pregunta si confías en la carpeta: dile que sí.
 3. Te dice en qué segundo enganchó y por qué vivió, con pruebas, y lo que casi lo arruina. Lo que es una sospecha (la hora, el sonido) lo dice como sospecha.
 4. Te da tres deseos, tres videos para repetirlo con su primera frase escrita, y te deja el acta en `cumples/` y la torta para historias, con velitas que forman tus vistas.
 
+### Día 7 · Tu gemelo malvado (`/gemelo`)
+
+1. Le pasas una captura de tu perfil: la parte de arriba, con la bio, los números y la grilla. Una de la pestaña de reels, con las vistas, ayuda.
+2. Busca lo que tu perfil no hace, cada cosa con su prueba en la captura: la bio, las portadas, si apareces, si hay una serie.
+3. Crea a tu gemelo malvado, del mismo tema: su nombre, su lema, tres superpoderes (lo que él hace y tú no), su plan para robarte los seguidores y su única debilidad.
+4. Te da tres pasos para adelantarte esta semana y te deja el expediente en `gemelos/` y la ficha de villano para historias.
+
 ## Cuánto gasta
 
-Usan tu cuenta de Claude. El juez hace entre 6 y 15 búsquedas en internet por juicio, el velorio y la fiesta miran hasta 30 cuadros del video, el tarot lee una o dos capturas, el chismoso lee hasta 500 comentarios y Miss Portada mira una captura y sus recortes.
+Usan tu cuenta de Claude. El juez hace entre 6 y 15 búsquedas en internet por juicio, el velorio y la fiesta miran hasta 30 cuadros del video, el tarot lee una o dos capturas, el chismoso lee hasta 500 comentarios, Miss Portada mira una captura y sus recortes, y el gemelo lee una o dos capturas.
 
 ## Privacidad
 
