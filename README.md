@@ -7,13 +7,14 @@ Las apps de la serie **«Día N creando apps súper locas sin saber programar»*
 | 1 | `/velorio` | Le pasas el link de tu reel que no vio nadie y le hace la autopsia: mira el video y los números, y te dice en qué segundo murió, de qué y cómo hacer que el próximo no muera. |
 | 2 | `/tarot` | Le pasas una captura de tu perfil y te tira tres cartas: lo que hiciste, lo que te frena y lo que tienes que hacer esta semana, cada una sacada de algo real de tu perfil. |
 | 3 | `/juez` | Juzga tu idea de negocio: te hace cinco preguntas, sale a investigar a tu competencia y lo que cobra, y dicta sentencia con pruebas. |
+| 4 | `/chismoso` | Le pasas el link de un video que explotó, tuyo o de otro, y lee los comentarios por ti: qué piden, de qué se quejan y qué preguntan, con cinco videos para hacer mañana. |
 
 Cada una te deja un informe completo y una imagen para tus historias.
 
 ## Qué necesitas
 
 - **Claude Code**, con una cuenta de Claude (Pro o Max) o una clave de API. Si no lo tienes, está en [claude.com/claude-code](https://claude.com/claude-code).
-- Para el velorio, **yt-dlp** (baja el video del link) y **ffmpeg** (lo mira por dentro). Si no los tienes, la app te ofrece instalarlos.
+- Para el velorio, **yt-dlp** (baja el video del link) y **ffmpeg** (lo mira por dentro). Para el chismoso, solo **yt-dlp** (baja los comentarios). Si no los tienes, la app te ofrece instalarlos.
 
 ## Cómo instalarlas
 
@@ -21,7 +22,7 @@ Cada una te deja un informe completo y una imagen para tus historias.
 2. Abre la carpeta en Claude Code:
    - en la app de escritorio, elige la carpeta `apps-super-locas`;
    - en la terminal, entra a la carpeta y escribe `claude`.
-3. Escribe el comando de la app: `/velorio`, `/tarot` o `/juez`. También puedes pedirlo con tus palabras, por ejemplo «quiero saber por qué murió mi reel».
+3. Escribe el comando de la app: `/velorio`, `/tarot`, `/juez` o `/chismoso`. También puedes pedirlo con tus palabras, por ejemplo «quiero saber por qué murió mi reel».
 
 La primera vez, Claude Code te pregunta si confías en la carpeta: dile que sí.
 
@@ -48,9 +49,16 @@ La primera vez, Claude Code te pregunta si confías en la carpeta: dile que sí.
 3. Dicta sentencia: cargos con pruebas, atenuantes y un fallo (absuelta, libertad condicional, culpable o cadena perpetua), más tres pasos para salir en libertad esta semana.
 4. Te deja el expediente completo en `expedientes/` y la sentencia para historias.
 
+### Día 4 · El chismoso de comentarios (`/chismoso`)
+
+1. Le pasas el link de un reel, TikTok o video de YouTube que explotó, tuyo o de tu competencia. También le sirven capturas de los comentarios.
+2. Baja los comentarios y los lee todos. YouTube los da completos; Instagram, sin iniciar sesión, solo los primeros 12 o 15 (si quieres que lea más, le pasas capturas).
+3. Te cuenta el chisme con pruebas: lo que piden, de qué se quejan, lo que preguntan y lo que les encantó, cada cosa con un comentario real y cuántos dicen lo mismo. Nunca muestra quién comentó.
+4. Te da cinco videos para hacer mañana, cada uno con el comentario que lo pidió, y te deja el acta en `chismes/` y la tapa de revista para historias.
+
 ## Cuánto gasta
 
-Usan tu cuenta de Claude. El juez hace entre 6 y 15 búsquedas en internet por juicio, el velorio mira hasta 30 cuadros del video y el tarot lee una o dos capturas.
+Usan tu cuenta de Claude. El juez hace entre 6 y 15 búsquedas en internet por juicio, el velorio mira hasta 30 cuadros del video, el tarot lee una o dos capturas y el chismoso lee hasta 500 comentarios.
 
 ## Privacidad
 

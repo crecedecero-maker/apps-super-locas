@@ -12,7 +12,9 @@
       "Edit(./velorios/**)",
       "Edit(./juez/datos.js)",
       "Edit(./tarot/datos.js)",
-      "Edit(./velorio/datos.js)"
+      "Edit(./velorio/datos.js)",
+      "Edit(./chismes/**)",
+      "Edit(./chismoso/datos.js)"
     ]
   }
 }

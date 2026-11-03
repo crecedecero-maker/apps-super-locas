@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El chismoso de comentarios</title>
+<meta name="description" content="El chisme de los comentarios de un video: qué piden, de qué se quejan, qué preguntan y cinco videos para hacer mañana.">
+<meta name="theme-color" content="#ff2e88">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,500;1,9..144,900&display=swap">
+<style>
+/* Una sola columna para el celular. La tapa de revista se dibuja en un canvas de
+   1080x1920 y es la misma imagen que se ve y la que se baja para historias.
+   El resultado sale de datos.js, que escribe /chismoso; si no está, ejemplo.js. */
+:root {
+  --rosa: #ff2e88;
+  --rosa-oscuro: #c8125f;
+  --amarillo: #ffd23f;
+  --papel: #fff7e8;
+  --tinta: #16070f;
+  --tinta-suave: #6b4b5a;
+  --verde: #16a34a;
+  --rojo: #e11d48;
+  --azul: #2563eb;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  background: var(--rosa);
+  color: var(--tinta);
+  font: 500 16px/1.5 "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+main {
+  max-width: 440px; margin: 0 auto;
+  padding: 36px max(18px, env(safe-area-inset-left)) 48px max(18px, env(safe-area-inset-right));
+  display: grid; gap: 22px;
+}
+[hidden] { display: none !important; }
+.serie { font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--tinta); margin: 0; font-weight: 800; }
+h1 { font: italic 900 clamp(2.5rem, 12vw, 3.3rem)/0.95 "Fraunces", Georgia, serif; margin: 0; letter-spacing: -0.02em; }
+.bajada { margin: 0; font-size: 1.08rem; font-weight: 600; }
+.aviso-ejemplo {
+  margin: 0; background: var(--amarillo); color: var(--tinta);
+  font-weight: 700; border-radius: 16px; padding: 12px 16px;
+}
+.aviso-ejemplo code { font: 800 1em "Bricolage Grotesque", system-ui, sans-serif; background: rgba(22, 7, 15, 0.1); padding: 1px 6px; border-radius: 6px; }
+.resultado, .panel {
+  background: var(--papel); color: var(--tinta);
+  border-radius: 22px; padding: 20px;
+  display: grid; gap: 14px;
+  box-shadow: 0 18px 40px rgba(80, 0, 40, 0.35);
+}
+.resultado img { width: 100%; height: auto; border-radius: 16px; display: block; background: var(--rosa); }
+button {
+  font: 800 1.05rem "Bricolage Grotesque", system-ui, sans-serif;
+  border: 0; border-radius: 999px; padding: 15px 22px; min-height: 52px; cursor: pointer;
+  background: var(--tinta); color: #fff;
+}
+button:active { transform: translateY(1px); }
+button:focus-visible, a:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
+.panel h2 { margin: 0; font: 800 0.8rem/1.2 "Bricolage Grotesque", system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rosa-oscuro); }
+.panel p { margin: 0; }
+.titular { font: 900 1.45rem/1.2 "Fraunces", Georgia, serif; }
+.meta { color: var(--tinta-suave); font-weight: 700; font-size: 0.95rem; overflow-wrap: anywhere; }
+.meta a { color: var(--tinta); }
+.grupo { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.grupo li { background: #fff; border-radius: 14px; padding: 12px 14px; border: 2px solid #f3d9e4; display: grid; gap: 4px; }
+.grupo .que { font-weight: 800; }
+.grupo .cita { font: italic 500 1rem/1.35 "Fraunces", Georgia, serif; color: var(--tinta-suave); }
+.grupo .cuantos { justify-self: start; font-weight: 800; font-size: 0.82rem; background: var(--amarillo); border-radius: 999px; padding: 2px 10px; }
+.videos { margin: 0; padding-left: 1.4em; display: grid; gap: 12px; }
+.videos li::marker { font-weight: 800; color: var(--rosa); }
+.videos .titulo { font-weight: 800; display: block; }
+.videos .porque { color: var(--tinta-suave); font-size: 0.95rem; }
+.vacio { color: var(--tinta-suave); font-weight: 600; }
+.error { margin: 0; background: #fff; color: var(--rosa-oscuro); font-weight: 700; border-radius: 16px; padding: 14px 16px; }
+footer { text-align: center; color: var(--tinta); font-size: 0.9rem; }
+footer a { color: var(--tinta); font-weight: 800; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="serie">Apps súper locas · Día 4</p>
+    <h1>El chismoso de comentarios</h1>
+    <p class="bajada">Leo los comentarios por ti: qué piden, de qué se quejan y qué preguntan.</p>
+  </header>
+
+  <p class="aviso-ejemplo" id="aviso-ejemplo" hidden></p>
+  <p class="error" id="error" role="alert" hidden></p>
+
+  <section class="resultado" id="resultado" hidden aria-live="polite">
+    <img id="tapa" alt="">
+    <button type="button" id="bajar">Bajar para historias</button>
+  </section>
+
+  <section class="panel" id="bloque-titular" hidden>
+    <h2>El chisme</h2>
+    <p class="titular" id="titular"></p>
+    <p class="meta" id="meta"></p>
+  </section>
+
+  <section class="panel" id="bloque-piden" hidden>
+    <h2>Lo que piden</h2>
+    <ul class="grupo" id="piden"></ul>
+  </section>
+
+  <section class="panel" id="bloque-quejas" hidden>
+    <h2>De qué se quejan</h2>
+    <ul class="grupo" id="quejas"></ul>
+  </section>
+
+  <section class="panel" id="bloque-preguntas" hidden>
+    <h2>Lo que preguntan</h2>
+    <ul class="grupo" id="preguntas"></ul>
+  </section>
+
+  <section class="panel" id="bloque-encanto" hidden>
+    <h2>Lo que les encantó</h2>
+    <ul class="grupo" id="encanto"></ul>
+  </section>
+
+  <section class="panel" id="bloque-videos" hidden>
+    <h2>Cinco videos para hacer mañana</h2>
+    <ol class="videos" id="videos"></ol>
+  </section>
+
+  <footer>Hecha con Claude Code por alguien que no sabe programar · <a href="https://www.instagram.com/crece_de_cero/">@crece_de_cero</a></footer>
+</main>
+
+<script>
+(function () {
+  var COMANDO = "/chismoso";
+  var actual = null;
+
+  function texto(v) { return v === null || v === undefined ? "" : String(v).trim(); }
+  function numero(v) { var n = Number(v); return isFinite(n) && n > 0 ? Math.round(n) : null; }
+  function grupo(v) {
+    return (Array.isArray(v) ? v : []).map(function (g) {
+      return { texto: texto(g && g.texto), cita: texto(g && g.cita), cuantos: numero(g && g.cuantos) };
+    }).filter(function (g) { return g.texto; }).slice(0, 3);
+  }
+  function fechaLinda(f) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(texto(f));
+    return m ? Number(m[3]) + "/" + Number(m[2]) + "/" + m[1] : "";
+  }
+  function linkSeguro(l) {
+    try { var u = new URL(texto(l)); return u.protocol === "https:" || u.protocol === "http:" ? u.href : ""; } catch (e) { return ""; }
+  }
+
+  // Parte el texto en renglones que entren en "ancho"; como mucho "max" (el último con «…»).
+  function renglones(ctx, contenido, ancho, max) {
+    var palabras = texto(contenido).split(/\s+/).filter(Boolean), lineas = [], linea = "";
+    palabras.forEach(function (p) {
+      var prueba = linea ? linea + " " + p : p;
+      if (!linea || ctx.measureText(prueba).width <= ancho) linea = prueba;
+      else { lineas.push(linea); linea = p; }
+    });
+    if (linea) lineas.push(linea);
+    if (lineas.length > max) {
+      lineas = lineas.slice(0, max);
+      var ultima = lineas[max - 1];
+      while (ultima && ctx.measureText(ultima + "…").width > ancho) ultima = ultima.replace(/\s*\S+$/, "");
+      lineas[max - 1] = ultima + "…";
+    }
+    return lineas;
+  }
+
+  // Un sticker redondo, torcido, con letra adentro.
+  function sticker(ctx, cx, cy, r, fondo, color, lineas) {
+    ctx.save();
+    ctx.translate(cx, cy); ctx.rotate(0.22);
+    ctx.beginPath();
+    for (var i = 0; i < 28; i++) {
+      var ang = (i / 28) * Math.PI * 2, rr = i % 2 ? r : r * 0.86;
+      ctx.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr);
+    }
+    ctx.closePath();
+    ctx.fillStyle = fondo; ctx.fill();
+    ctx.lineWidth = 6; ctx.strokeStyle = "#16070f"; ctx.stroke();
+    ctx.fillStyle = color; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    lineas.forEach(function (l, j) {
+      ctx.font = l.fuente;
+      ctx.fillText(l.t, 0, (j - (lineas.length - 1) / 2) * l.alto);
+    });
+    ctx.restore();
+  }
+
+  function caja(ctx, x, y, w, h, r, relleno, borde) {
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, r);
+    if (relleno) { ctx.fillStyle = relleno; ctx.fill(); }
+    if (borde) { ctx.lineWidth = 5; ctx.strokeStyle = borde; ctx.stroke(); }
+  }
+
+  // El cuerpo de la tapa (todo lo que va debajo de la cabecera), desde y = 0. Con "pintar"
+  // en false solo mide: así se elige cuántos renglones entran antes de dibujar.
+  function cuerpo(ctx, d, citaMax, libre, pintar) {
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.font = '900 66px "Fraunces"';
+    var tit = renglones(ctx, d.titular, 880, 4);
+    var altoTit = 70 + tit.length * 78;
+    if (pintar) {
+      caja(ctx, 60, 0, 960, altoTit, 24, "#16070f");
+      ctx.fillStyle = "#fff";
+      tit.forEach(function (l, i) { ctx.fillText(l, 100, 92 + i * 78); });
+    }
+    var y = altoTit + 56;
+    ctx.font = '600 30px "Bricolage Grotesque"';
+    var leidos = "Leí " + (d.leidos ? d.leidos.toLocaleString("es-AR") : "los") + " comentarios" + (d.red ? " de " + d.red : "");
+    var fuenteVideo = d.video ? leidos + ": «" + d.video + "»" : leidos;
+    // Un solo renglón: si el título del video no entra, va solo cuántos leí.
+    if (renglones(ctx, fuenteVideo, 960, 2).length > 1) fuenteVideo = leidos;
+    if (pintar) { ctx.fillStyle = "#6b4b5a"; ctx.fillText(renglones(ctx, fuenteVideo, 960, 1)[0], 60, y); }
+    y += 58;
+
+    // Los tres grupos: el primero de cada uno.
+    var grupos = [
+      { nombre: "LO QUE PIDEN", color: "#16a34a", g: d.piden[0] },
+      { nombre: "DE QUÉ SE QUEJAN", color: "#e11d48", g: d.quejas[0] },
+      { nombre: "LO QUE PREGUNTAN", color: "#2563eb", g: d.preguntas[0] },
+    ].filter(function (x) { return x.g; });
+    grupos.forEach(function (x) {
+      ctx.font = '800 40px "Bricolage Grotesque"';
+      var que = renglones(ctx, x.g.texto, 860, 2);
+      ctx.font = 'italic 500 32px "Fraunces"';
+      var cita = x.g.cita ? renglones(ctx, "«" + x.g.cita + "»", 860, citaMax) : [];
+      var alto = 90 + que.length * 48 + cita.length * 40 + 24;
+      if (pintar) {
+        caja(ctx, 60, y, 960, alto, 22, "#fff", x.color);
+        ctx.fillStyle = x.color; ctx.font = '800 26px "Bricolage Grotesque"'; ctx.textAlign = "left";
+        ctx.fillText(x.nombre, 100, y + 50);
+        if (x.g.cuantos) {
+          ctx.font = '800 28px "Bricolage Grotesque"';
+          var etiqueta = x.g.cuantos + " lo dicen", w = ctx.measureText(etiqueta).width + 36;
+          caja(ctx, 1020 - 40 - w, y + 18, w, 48, 24, "#ffd23f");
+          ctx.fillStyle = "#16070f"; ctx.textAlign = "center"; ctx.fillText(etiqueta, 1020 - 40 - w / 2, y + 52);
+          ctx.textAlign = "left";
+        }
+        var yy = y + 102;
+        ctx.fillStyle = "#16070f"; ctx.font = '800 40px "Bricolage Grotesque"';
+        que.forEach(function (l) { ctx.fillText(l, 100, yy); yy += 48; });
+        ctx.fillStyle = "#6b4b5a"; ctx.font = 'italic 500 32px "Fraunces"';
+        cita.forEach(function (l) { ctx.fillText(l, 100, yy + 4); yy += 40; });
+      }
+      y += alto + 24;
+    });
+
+    // Los cinco videos, en la caja negra de abajo (pegada al pie si sobra lugar).
+    var videos = d.videos.slice(0, 5);
+    if (videos.length) {
+      ctx.font = '800 32px "Bricolage Grotesque"';
+      var lineasVid = videos.map(function (v) { return renglones(ctx, v.titulo, 840, 2); });
+      var altoVid = 96 + lineasVid.reduce(function (s, l) { return s + l.length * 42 + 22; }, 0);
+      var yv = Math.max(y + 10, libre - altoVid);
+      if (pintar) {
+        caja(ctx, 60, yv, 960, altoVid, 24, "#16070f");
+        ctx.fillStyle = "#ffd23f"; ctx.font = '800 30px "Bricolage Grotesque"'; ctx.textAlign = "left";
+        ctx.fillText(videos.length + " VIDEOS PARA HACER MAÑANA", 100, yv + 60);
+        var yl = yv + 112;
+        lineasVid.forEach(function (lineas, i) {
+          ctx.fillStyle = "#ffd23f"; ctx.font = '900 34px "Fraunces"';
+          ctx.fillText(String(i + 1), 100, yl);
+          ctx.fillStyle = "#fff"; ctx.font = '800 32px "Bricolage Grotesque"';
+          lineas.forEach(function (l, j) { ctx.fillText(l, 150, yl + j * 42); });
+          yl += lineas.length * 42 + 22;
+        });
+      }
+      y = yv + altoVid;
+    }
+    return y;
+  }
+
+  function dibujar(d) {
+    var c = document.createElement("canvas");
+    c.width = 1080; c.height = 1920;
+    var ctx = c.getContext("2d");
+    ctx.fillStyle = "#fff7e8"; ctx.fillRect(0, 0, 1080, 1920);
+
+    // La cabecera de la revista, con el sello en la esquina (así no tapa ni la fecha ni el titular).
+    ctx.fillStyle = "#ff2e88"; ctx.fillRect(0, 0, 1080, 330);
+    ctx.fillStyle = "#16070f"; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.font = 'italic 900 150px "Fraunces"';
+    ctx.fillText("El chismoso", 60, 190);
+    ctx.font = '800 28px "Bricolage Grotesque"';
+    ctx.fillText("DE COMENTARIOS · APPS SÚPER LOCAS · DÍA 4", 64, 250);
+    ctx.font = '800 28px "Bricolage Grotesque"'; ctx.textAlign = "right";
+    ctx.fillText(fechaLinda(d.fecha), 1016, 300);
+    sticker(ctx, 968, 122, 84, "#ffd23f", "#16070f", [
+      { t: "¡EXCLU-", fuente: '900 30px "Bricolage Grotesque"', alto: 34 },
+      { t: "SIVO!", fuente: '900 30px "Bricolage Grotesque"', alto: 34 },
+    ]);
+
+    // El cuerpo va de y = 380 al pie. Si no entra, primero las citas pasan a un renglón,
+    // y si igual no entra, se achica todo parejo.
+    var arriba = 380, libre = 1830 - arriba, citaMax = 2;
+    var alto = cuerpo(ctx, d, citaMax, libre, false);
+    if (alto > libre) { citaMax = 1; alto = cuerpo(ctx, d, citaMax, libre, false); }
+    var escala = alto > libre ? libre / alto : 1;
+    ctx.save();
+    ctx.translate(540 * (1 - escala), arriba);
+    ctx.scale(escala, escala);
+    cuerpo(ctx, d, citaMax, libre / escala, true);
+    ctx.restore();
+
+    ctx.fillStyle = "#6b4b5a"; ctx.font = '700 26px "Bricolage Grotesque"'; ctx.textAlign = "center";
+    ctx.fillText("@crece_de_cero · hecha con Claude Code", 540, 1885);
+    return c;
+  }
+
+  function fuentesListas() {
+    if (!document.fonts || !document.fonts.load) return Promise.resolve();
+    return Promise.all([
+      document.fonts.load('italic 900 150px "Fraunces"'),
+      document.fonts.load('900 66px "Fraunces"'),
+      document.fonts.load('italic 500 32px "Fraunces"'),
+      document.fonts.load('800 40px "Bricolage Grotesque"'),
+      document.fonts.load('600 30px "Bricolage Grotesque"'),
+    ]).catch(function () {});
+  }
+
+  function llenarGrupo(el, items) {
+    el.textContent = "";
+    items.forEach(function (g) {
+      var li = document.createElement("li");
+      var que = document.createElement("span"); que.className = "que"; que.textContent = g.texto; li.appendChild(que);
+      if (g.cita) { var cita = document.createElement("span"); cita.className = "cita"; cita.textContent = "«" + g.cita + "»"; li.appendChild(cita); }
+      if (g.cuantos) { var n = document.createElement("span"); n.className = "cuantos"; n.textContent = g.cuantos + " lo dicen"; li.appendChild(n); }
+      el.appendChild(li);
+    });
+  }
+
+  function mostrar(s) {
+    var d = {
+      fecha: texto(s.fecha), video: texto(s.video), red: texto(s.red), link: linkSeguro(s.link),
+      leidos: numero(s.leidos), total: numero(s.total), titular: texto(s.titular),
+      piden: grupo(s.piden), quejas: grupo(s.quejas), preguntas: grupo(s.preguntas), encanto: grupo(s.encanto),
+      videos: (Array.isArray(s.videos) ? s.videos : []).map(function (v) { return { titulo: texto(v && v.titulo), porque: texto(v && v.porque) }; })
+        .filter(function (v) { return v.titulo; }).slice(0, 5),
+    };
+    if (!d.titular) {
+      var e = document.getElementById("error");
+      e.textContent = "El resultado vino incompleto. Escribe " + COMANDO + " en Claude Code y vuelve a abrir esta página.";
+      e.hidden = false;
+      return;
+    }
+    document.getElementById("titular").textContent = d.titular;
+    var meta = document.getElementById("meta");
+    meta.textContent = "Leí " + (d.leidos || "los") + (d.total ? " de " + d.total : "") + " comentarios" + (d.red ? " de " + d.red : "") + (d.video ? ": «" + d.video + "»" : "") + ". ";
+    if (d.link) { var a = document.createElement("a"); a.href = d.link; a.textContent = "Ver el video"; a.rel = "noopener"; a.target = "_blank"; meta.appendChild(a); }
+    document.getElementById("bloque-titular").hidden = false;
+    [["piden", d.piden], ["quejas", d.quejas], ["preguntas", d.preguntas], ["encanto", d.encanto]].forEach(function (p) {
+      if (!p[1].length) return;
+      llenarGrupo(document.getElementById(p[0]), p[1]);
+      document.getElementById("bloque-" + p[0]).hidden = false;
+    });
+    if (d.videos.length) {
+      var ol = document.getElementById("videos"); ol.textContent = "";
+      d.videos.forEach(function (v) {
+        var li = document.createElement("li");
+        var t = document.createElement("span"); t.className = "titulo"; t.textContent = v.titulo; li.appendChild(t);
+        if (v.porque) { var p = document.createElement("span"); p.className = "porque"; p.textContent = v.porque; li.appendChild(p); }
+        ol.appendChild(li);
+      });
+      document.getElementById("bloque-videos").hidden = false;
+    }
+    fuentesListas().then(function () {
+      var canvas = dibujar(d);
+      actual = { canvas: canvas, video: d.video || "comentarios" };
+      var img = document.getElementById("tapa");
+      img.src = canvas.toDataURL("image/png");
+      img.alt = "Tapa de revista del chisme: " + d.titular;
+      document.getElementById("resultado").hidden = false;
+    });
+  }
+
+  document.getElementById("bajar").addEventListener("click", function () {
+    if (!actual || !actual.canvas) return;
+    var nombre = "chisme-" + actual.video.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]+/g, "-").slice(0, 40).replace(/^-|-$/g, "") + ".png";
+    actual.canvas.toBlob(function (blob) {
+      var archivo = new File([blob], nombre, { type: "image/png" });
+      // En el celular, compartir abre la hoja para guardarla o subirla a historias.
+      if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+        navigator.share({ files: [archivo], title: "El chismoso de comentarios" }).catch(function () {});
+        return;
+      }
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = nombre;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+    }, "image/png");
+  });
+
+  // ---------- Los datos: datos.js, o el ejemplo si todavía no hay ----------
+  function cargar(src, listo) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.onload = function () { listo(true); };
+    s.onerror = function () { listo(false); };
+    document.head.appendChild(s);
+  }
+  function avisar(motivo) {
+    var p = document.getElementById("aviso-ejemplo"), code = document.createElement("code");
+    code.textContent = COMANDO;
+    p.textContent = motivo === "roto" ? "No pude leer datos.js. Esto es un ejemplo. Escribe " : "Esto es un ejemplo. Escribe ";
+    p.appendChild(code);
+    p.appendChild(document.createTextNode(" en Claude Code para ver el tuyo."));
+    p.hidden = false;
+  }
+  cargar("datos.js", function (hay) {
+    if (hay && window.CHISME) { mostrar(window.CHISME); return; }
+    var motivo = hay ? "roto" : "falta";
+    window.CHISME = undefined;
+    cargar("ejemplo.js", function (ok) {
+      if (ok && window.CHISME) { avisar(motivo); mostrar(window.CHISME); return; }
+      var e = document.getElementById("error");
+      e.textContent = "No encontré el resultado. Escribe " + COMANDO + " en Claude Code y vuelve a abrir esta página.";
+      e.hidden = false;
+    });
+  });
+})();
+</script>
+</body>
+</html>
